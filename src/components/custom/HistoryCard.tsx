@@ -5,24 +5,18 @@ interface HistoryItem {
 }
 
 interface HistoryCardProps {
-  title: string;
   items: HistoryItem[];
 }
 
-export default function HistoryCard({ title, items }: HistoryCardProps) {
+export default function HistoryCard({ items }: HistoryCardProps) {
   return (
     <div className="bg-white rounded-xl p-6 shadow-lg flex-1 min-w-[320px]">
-      {/* Header */}
-      <h3 className="text-gray-700 font-semibold text-lg mb-6">{title}</h3>
-
-      {/* Lista de elementos */}
       <div className="space-y-3">
         {items.map((item) => (
           <div
             key={item.id}
             className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border-l-4 border-red-400"
           >
-            {/* Icono de eliminación */}
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
                 <svg
@@ -41,7 +35,6 @@ export default function HistoryCard({ title, items }: HistoryCardProps) {
               </div>
             </div>
 
-            {/* Contenido */}
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-800 font-medium truncate">
                 {item.text}

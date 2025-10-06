@@ -1,11 +1,12 @@
 import LeafletMap from "./LeafletMap";
+import Card from "../custom/Card.component";
 
 interface MapCardProps {
   title: string;
   date: string;
 }
 
-export default function MapCard({ title, date }: MapCardProps) {
+export default function MapCard({ ...props }: MapCardProps) {
   const parcelas = [
     {
       lat: 9.934739,
@@ -42,20 +43,18 @@ export default function MapCard({ title, date }: MapCardProps) {
   ];
 
   const mapCenter: [number, number] = [9.934739, -84.087502];
-  const mapZoom = 15;
+  const mapZoom = 10;
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-lg flex-1 min-w-[320px]">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-gray-700 font-semibold text-lg">{title}</h3>
-        <span className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-          {date}
-        </span>
-      </div>
-
-      {/* Leaflet Map */}
-      <LeafletMap center={mapCenter} zoom={mapZoom} parcelas={parcelas} />
-    </div>
+    <>
+      <Card title={props.title} className="">
+        <LeafletMap
+          center={mapCenter}
+          zoom={mapZoom}
+          parcelas={parcelas}
+          height="h-[500px]"
+        />
+      </Card>
+    </>
   );
 }
