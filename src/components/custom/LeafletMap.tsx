@@ -14,6 +14,7 @@ interface LeafletMapProps {
     status?: string;
   }>;
   height?: string;
+  showActions?: boolean;
   onEditParcela?: (parcela: any) => void;
   onDeleteParcela?: (parcela: any) => void;
 }
@@ -23,6 +24,7 @@ export default function LeafletMap({
   zoom,
   parcelas,
   height = "h-48",
+  showActions = false,
   onEditParcela,
   onDeleteParcela,
 }: LeafletMapProps) {
@@ -57,23 +59,23 @@ export default function LeafletMap({
       iconAnchor: [10, 10],
     });
 
-    // Configurar manejador global para las acciones del popup
-    (window as any).handleParcelaAction = (parcelaId: string, action: string) => {
-      const parcela = parcelas.find(p => p.id === parcelaId);
-      if (!parcela) return;
+    if (showActions) {
+      (window as any).handleParcelaAction = (parcelaId: string, action: string) => {
+        const parcela = parcelas.find(p => p.id === parcelaId);
+        if (!parcela) return;
 
-      if (action === 'edit' && onEditParcela) {
-        onEditParcela(parcela);
-      } else if (action === 'delete' && onDeleteParcela) {
-        onDeleteParcela(parcela);
-      }
+        if (action === 'edit' && onEditParcela) {
+          onEditParcela(parcela);
+        } else if (action === 'delete' && onDeleteParcela) {
+          onDeleteParcela(parcela);
+        }
 
-      // Resetear el select
-      const selectElement = document.getElementById(`action-select-${parcelaId}`) as HTMLSelectElement;
-      if (selectElement) {
-        selectElement.value = '';
-      }
-    };
+        const selectElement = document.getElementById(`action-select-${parcelaId}`) as HTMLSelectElement;
+        if (selectElement) {
+          selectElement.value = '';
+        }
+      };
+    }
 
     parcelas.forEach((parcela) => {
       const marker = L.marker([parcela.lat, parcela.lng], {
@@ -81,12 +83,12 @@ export default function LeafletMap({
       }).addTo(map);
 
       const popupContent = `
-        <div style="font-family: system-ui, sans-serif; min-width: 280px; padding: 8px;">
+        <div style="font-family: system-ui, sans-serif; min-width: ${showActions ? '280px' : '250px'}; padding: 8px;">
           <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: bold; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">${
             parcela.name
           }</h3>
           
-          <div style="display: grid; gap: 8px; margin-bottom: 16px;">
+          <div style="display: grid; gap: 8px; ${showActions ? 'margin-bottom: 16px;' : ''}">
             <div style="display: flex; justify-content: space-between;">
               <span style="font-weight: 600; color: #6b7280;">ID:</span> 
               <span style="color: #374151; font-weight: 500;">${parcela.id}</span>
@@ -117,6 +119,7 @@ export default function LeafletMap({
             </div>
           </div>
           
+          ${showActions ? `
           <div style="border-top: 1px solid #e5e7eb; padding-top: 12px;">
             <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 6px; font-size: 14px;">Acciones:</label>
             <select 
@@ -135,10 +138,11 @@ export default function LeafletMap({
               onchange="handleParcelaAction('${parcela.id}', this.value)"
             >
               <option value="" style="color: #9ca3af;">Seleccione una acción</option>
-              <option value="edit">Editar parcela</option>
-              <option value="delete">Eliminar parcela</option>
+              <option value="edit">✏️ Editar parcela</option>
+              <option value="delete">🗑️ Eliminar parcela</option>
             </select>
           </div>
+          ` : ''}
         </div>
       `;
 
@@ -154,9 +158,12 @@ export default function LeafletMap({
       if (mapInstance.current) {
         mapInstance.current.remove();
       }
-      delete (window as any).handleParcelaAction;
+      // Limpiar el manejador global solo si fue configurado
+      if (showActions) {
+        delete (window as any).handleParcelaAction;
+      }
     };
-  }, [center, zoom, parcelas]);
+  }, [center, zoom, parcelas, showActions, onEditParcela, onDeleteParcela]);
 
   const handleZoomIn = () => {
     if (mapInstance.current) {
