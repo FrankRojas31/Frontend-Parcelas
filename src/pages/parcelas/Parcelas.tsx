@@ -1,82 +1,190 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Card from "../../components/custom/Card.component";
 import LeafletMap from "../../components/custom/LeafletMap";
 import { LayoutAdmin } from "../../layout/admin/Layout.component";
 import Modal from "../../components/custom/Modals";
+import {
+  getAllParcelas,
+  createParcela,
+  updateParcela,
+  deleteParcela,
+} from "../../services/parcelas.service";
+import { getAllUsuarios } from "../../services/usuarios.service";
+import type { Usuario } from "../../types";
 
 function Parcelas() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<
-    "add" | "edit" | "delete"
-  >("add");
+  const [modalType, setModalType] = useState<"add" | "edit" | "delete">("add");
   const [selectedParcela, setSelectedParcela] = useState<any>(null);
+  const [parcelas, setParcelas] = useState<any[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const parcelas = [
-    {
-      lat: 9.934739,
-      lng: -84.087502,
-      id: "P001",
-      name: "Parcela Agrícola San José #1",
-      area: "2.5 hectáreas",
-      status: "Activa",
-    },
-    {
-      lat: 9.928739,
-      lng: -84.081502,
-      id: "P002",
-      name: "Parcela Agrícola San José #2",
-      area: "1.8 hectáreas",
-      status: "Activa",
-    },
-    {
-      lat: 9.940739,
-      lng: -84.093502,
-      id: "P003",
-      name: "Parcela Agrícola San José #3",
-      area: "3.2 hectáreas",
-      status: "Activa",
-    },
-    {
-      lat: 9.937739,
-      lng: -84.089502,
-      id: "P004",
-      name: "Parcela Agrícola San José #4",
-      area: "2.1 hectáreas",
-      status: "Activa",
-    },
-  ];
-  const mapCenter: [number, number] = [9.934739, -84.087502];
-  const mapZoom = 10;
+  const nombreRef = useRef<HTMLInputElement>(null);
+  const latitudRef = useRef<HTMLInputElement>(null);
+  const longitudRef = useRef<HTMLInputElement>(null);
+  const usuarioRef = useRef<HTMLSelectElement>(null);
 
-  const openModal = (
-    type: "add" | "edit" | "delete",
-    parcela?: any
-  ) => {
+  const getMapCenter = (): [number, number] => {
+    if (parcelas.length > 0) {
+      const avgLat = parcelas.reduce((sum, p) => sum + p.lat, 0) / parcelas.length;
+      const avgLng = parcelas.reduce((sum, p) => sum + p.lng, 0) / parcelas.length;
+      return [avgLat, avgLng];
+    }
+    return [9.934739, -84.087502]; 
+  };
+
+  const mapCenter: [number, number] = getMapCenter();
+  const mapZoom = parcelas.length > 0 ? 10 : 8;
+
+  useEffect(() => {
+    fetchParcelas();
+    fetchUsuarios();
+  }, []);
+
+  const fetchParcelas = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getAllParcelas();
+      
+      const parcelasTransformadas = data
+        .filter((p) => !p.borrado)
+        .map((parcela) => ({
+          lat: parseFloat(parcela.latitud),
+          lng: parseFloat(parcela.longitud),
+          id: parcela.id?.toString() || "", 
+          name: parcela.nombre,
+          id_usuario: parcela.id_usuario,
+        }));
+      
+      setParcelas(parcelasTransformadas);
+    } catch (err) {
+      setError("Error al cargar las parcelas. Verifica que el servidor esté corriendo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUsuarios = async () => {
+    try {
+      const data = await getAllUsuarios();
+      const usuariosFiltrados = data.filter((u) => !u.borrado);
+      setUsuarios(usuariosFiltrados);
+    } catch (err) {
+      setError("Error al cargar usuarios. Verifica que el servidor esté corriendo.");
+    }
+  };
+
+  const openModal = (type: "add" | "edit" | "delete", parcela?: any) => {
     setModalType(type);
     setSelectedParcela(parcela || null);
     setIsModalOpen(true);
   };
 
-  const handleConfirm = () => {
-    console.log(`${modalType} parcela:`, selectedParcela);
-    setIsModalOpen(false);
+  const handleConfirm = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (modalType === "add") {
+        const nombre = nombreRef.current?.value?.trim() || "";
+        const latitud = latitudRef.current?.value?.trim() || "";
+        const longitud = longitudRef.current?.value?.trim() || "";
+        const id_usuario = parseInt(usuarioRef.current?.value || "0");
+
+        if (!nombre || !latitud || !longitud || !id_usuario) {
+          alert("Todos los campos son requeridos");
+          setLoading(false);
+          return;
+        }
+
+        if (isNaN(parseFloat(latitud)) || isNaN(parseFloat(longitud))) {
+          alert("Las coordenadas deben ser números válidos");
+          setLoading(false);
+          return;
+        }
+
+        await createParcela({
+          nombre,
+          latitud,
+          longitud,
+          id_usuario,
+        });
+
+        alert("Parcela creada exitosamente");
+      } else if (modalType === "edit" && selectedParcela) {
+        const nombre = nombreRef.current?.value?.trim() || selectedParcela.name;
+        const latitud = latitudRef.current?.value?.trim() || selectedParcela.lat.toString();
+        const longitud = longitudRef.current?.value?.trim() || selectedParcela.lng.toString();
+        const id_usuario = parseInt(usuarioRef.current?.value || selectedParcela.id_usuario.toString());
+
+        if (isNaN(parseFloat(latitud)) || isNaN(parseFloat(longitud))) {
+          alert("Las coordenadas deben ser números válidos");
+          setLoading(false);
+          return;
+        }
+
+        await updateParcela(parseInt(selectedParcela.id), {
+          nombre,
+          latitud,
+          longitud,
+          id_usuario,
+        });
+
+        alert("Parcela actualizada exitosamente");
+      } else if (modalType === "delete" && selectedParcela) {
+        await deleteParcela(parseInt(selectedParcela.id));
+        alert("Parcela eliminada exitosamente");
+      }
+      await fetchParcelas();
+      setIsModalOpen(false);
+    } catch (err: any) {
+      console.error("Error en la operación:", err);
+      alert(`Error: ${err.message || "Ocurrió un error al procesar la solicitud"}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <LayoutAdmin title="Gestión de Parcelas - Quintana Roo">
+    <LayoutAdmin title="Gestión de Parcelas">
       <Card title="Parcelas" type="add" onButtonClick={() => openModal("add")}>
         <div className="p-4">
-          <Card title="Cancún" className="w-full" secondary>
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded border border-red-300">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+          {loading && (
+            <div className="mb-4 p-3 bg-blue-100 text-blue-700 rounded border border-blue-300">
+              Cargando datos...
+            </div>
+          )}
+          
+          <div className="mb-3 text-sm text-gray-600">
+            Total de parcelas: <strong>{parcelas.length}</strong>
+          </div>
+
+          <Card title="Mapa de Parcelas" className="w-full" secondary>
             <div className="p-4">
-              <LeafletMap
-                center={mapCenter}
-                zoom={mapZoom}
-                parcelas={parcelas}
-                height="h-[300px]"
-                showActions={true}
-                onEditParcela={(parcela) => openModal("edit", parcela)}
-                onDeleteParcela={(parcela) => openModal("delete", parcela)}
-              />
+              {parcelas.length === 0 && !loading ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="mb-2">No hay parcelas registradas</p>
+                  <p className="text-sm">Haz clic en el botón "+" para agregar una nueva parcela</p>
+                </div>
+              ) : (
+                <LeafletMap
+                  center={mapCenter}
+                  zoom={mapZoom}
+                  parcelas={parcelas}
+                  height="h-[500px]"
+                  showActions={true}
+                  onEditParcela={(parcela) => openModal("edit", parcela)}
+                  onDeleteParcela={(parcela) => openModal("delete", parcela)}
+                />
+              )}
             </div>
           </Card>
         </div>
@@ -106,27 +214,13 @@ function Parcelas() {
                 Nombre
               </label>
               <input
+                ref={nombreRef}
                 type="text"
                 className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-                placeholder="Parcela..."
+                placeholder="Nombre de la parcela..."
                 defaultValue={
                   modalType === "edit" && selectedParcela
                     ? selectedParcela.name
-                    : ""
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Área
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-                placeholder="2.5"
-                defaultValue={
-                  modalType === "edit" && selectedParcela
-                    ? selectedParcela.area.replace(" hectáreas", "")
                     : ""
                 }
               />
@@ -137,9 +231,10 @@ function Parcelas() {
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <input
+                  ref={latitudRef}
                   type="text"
                   className="border border-gray-300 rounded px-2 py-1.5 text-sm"
-                  placeholder="Lat"
+                  placeholder="Latitud"
                   defaultValue={
                     modalType === "edit" && selectedParcela
                       ? selectedParcela.lat
@@ -147,9 +242,10 @@ function Parcelas() {
                   }
                 />
                 <input
+                  ref={longitudRef}
                   type="text"
                   className="border border-gray-300 rounded px-2 py-1.5 text-sm"
-                  placeholder="Lng"
+                  placeholder="Longitud"
                   defaultValue={
                     modalType === "edit" && selectedParcela
                       ? selectedParcela.lng
@@ -160,40 +256,34 @@ function Parcelas() {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                Estado
-              </label>
-              <select
-                title="Estado"
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-                defaultValue={
-                  modalType === "edit" && selectedParcela
-                    ? selectedParcela.status
-                    : "Activa"
-                }
-              >
-                <option value="Activa">Activa</option>
-                <option value="Inactiva">Inactiva</option>
-                <option value="En mantenimiento">En mantenimiento</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Usuario responsable
               </label>
               <select
+                ref={usuarioRef}
                 title="Usuario responsable"
                 className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
                 defaultValue={
                   modalType === "edit" && selectedParcela
-                    ? selectedParcela.status
-                    : "Activa"
+                    ? selectedParcela.id_usuario
+                    : ""
                 }
               >
-                <option value="Activa">Emmanuel</option>
-                <option value="Inactiva">Jose</option>
-                <option value="Inactiva">Joshua</option>
-
+                <option value="">Selecciona un usuario</option>
+                {usuarios.length === 0 ? (
+                  <option value="" disabled>Cargando usuarios...</option>
+                ) : (
+                  usuarios.map((usuario) => (
+                    <option key={usuario.id} value={usuario.id}>
+                      {usuario.username}
+                    </option>
+                  ))
+                )}
               </select>
+              {usuarios.length === 0 && (
+                <p className="text-xs text-red-500 mt-1">
+                  No hay usuarios disponibles. Verifica la conexión con el servidor.
+                </p>
+              )}
             </div>
           </div>
         ) : (
