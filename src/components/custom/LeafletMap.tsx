@@ -2,18 +2,6 @@ import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// Fix para los iconos por defecto de Leaflet en bundlers
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
-
 interface LeafletMapProps {
   center: [number, number];
   zoom: number;
@@ -133,7 +121,7 @@ export default function LeafletMap({
   };
 
   return (
-    <div className={`relative ${height} rounded-lg overflow-hidden`}>
+    <div className={`relative ${height} rounded-b-lg overflow-hidden`}>
       <div ref={mapRef} className="w-full h-full" />
 
       {/* Controles de zoom personalizados */}
@@ -164,11 +152,6 @@ export default function LeafletMap({
           {parcelas.length} parcela{parcelas.length !== 1 ? "s" : ""} registrada
           {parcelas.length !== 1 ? "s" : ""}
         </div>
-      </div>
-
-      {/* Atribución de OpenStreetMap */}
-      <div className="absolute bottom-1 right-1 text-xs text-gray-500 bg-white/80 px-1 rounded z-[1000]">
-        © OpenStreetMap
       </div>
     </div>
   );
