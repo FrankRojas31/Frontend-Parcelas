@@ -63,6 +63,7 @@ export default function Menu() {
           );
         })}
         
+        {/* Dropdown de Configuración */}
         <div className="relative" ref={dropdownRef}>
           <button
             className={`rounded-full transition-all duration-200 p-4 ${
@@ -80,6 +81,7 @@ export default function Menu() {
             />
           </button>
 
+          {/* Dropdown Menu */}
           {showDropdown && (
             <div className="absolute bottom-full mb-2 right-0 bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 py-2 min-w-[160px] animate-fadeIn">
               <button
