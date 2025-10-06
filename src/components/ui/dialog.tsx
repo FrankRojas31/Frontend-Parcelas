@@ -74,7 +74,7 @@ export function DialogContent({ children, className = "" }: DialogContentProps) 
 
 export function DialogHeader({ children, onClose }: DialogHeaderProps) {
   return (
-    <div className="flex flex-col space-y-2 px-6 py-4 border-b">
+    <div className="flex flex-col space-y-2 px-6 py-4 border-b border-gray-200">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           {children}
@@ -107,7 +107,7 @@ export function DialogDescription({ children }: DialogDescriptionProps) {
 
 export function DialogFooter({ children }: DialogFooterProps) {
   return (
-    <div className="flex justify-end gap-2 px-6 py-3 border-t">
+    <div className="flex justify-end gap-2 px-6 py-3">
       {children}
     </div>
   );

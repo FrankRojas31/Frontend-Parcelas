@@ -138,8 +138,8 @@ export default function LeafletMap({
               onchange="handleParcelaAction('${parcela.id}', this.value)"
             >
               <option value="" style="color: #9ca3af;">Seleccione una acción</option>
-              <option value="edit">✏️ Editar parcela</option>
-              <option value="delete">🗑️ Eliminar parcela</option>
+              <option value="edit">Editar parcela</option>
+              <option value="delete">Eliminar parcela</option>
             </select>
           </div>
           ` : ''}
