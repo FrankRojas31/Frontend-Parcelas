@@ -73,6 +73,7 @@ function Parcelas() {
                 zoom={mapZoom}
                 parcelas={parcelas}
                 height="h-[300px]"
+                showActions={true}
                 onEditParcela={(parcela) => openModal("edit", parcela)}
                 onDeleteParcela={(parcela) => openModal("delete", parcela)}
               />
