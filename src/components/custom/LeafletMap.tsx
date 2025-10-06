@@ -14,6 +14,8 @@ interface LeafletMapProps {
     status?: string;
   }>;
   height?: string;
+  onEditParcela?: (parcela: any) => void;
+  onDeleteParcela?: (parcela: any) => void;
 }
 
 export default function LeafletMap({
@@ -21,6 +23,8 @@ export default function LeafletMap({
   zoom,
   parcelas,
   height = "h-48",
+  onEditParcela,
+  onDeleteParcela,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
@@ -53,48 +57,93 @@ export default function LeafletMap({
       iconAnchor: [10, 10],
     });
 
+    // Configurar manejador global para las acciones del popup
+    (window as any).handleParcelaAction = (parcelaId: string, action: string) => {
+      const parcela = parcelas.find(p => p.id === parcelaId);
+      if (!parcela) return;
+
+      if (action === 'edit' && onEditParcela) {
+        onEditParcela(parcela);
+      } else if (action === 'delete' && onDeleteParcela) {
+        onDeleteParcela(parcela);
+      }
+
+      // Resetear el select
+      const selectElement = document.getElementById(`action-select-${parcelaId}`) as HTMLSelectElement;
+      if (selectElement) {
+        selectElement.value = '';
+      }
+    };
+
     parcelas.forEach((parcela) => {
       const marker = L.marker([parcela.lat, parcela.lng], {
         icon: parcelaIcon,
       }).addTo(map);
 
       const popupContent = `
-        <div style="font-family: system-ui, sans-serif; min-width: 200px;">
-          <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1f2937;">${
+        <div style="font-family: system-ui, sans-serif; min-width: 280px; padding: 8px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: bold; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">${
             parcela.name
           }</h3>
-          <div style="margin-bottom: 4px;">
-            <span style="font-weight: 600; color: #6b7280;">ID:</span> 
-            <span style="color: #374151;">${parcela.id}</span>
+          
+          <div style="display: grid; gap: 8px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="font-weight: 600; color: #6b7280;">ID:</span> 
+              <span style="color: #374151; font-weight: 500;">${parcela.id}</span>
+            </div>
+            ${
+              parcela.area
+                ? `
+              <div style="display: flex; justify-content: space-between;">
+                <span style="font-weight: 600; color: #6b7280;">Área:</span> 
+                <span style="color: #374151; font-weight: 500;">${parcela.area}</span>
+              </div>
+            `
+                : ""
+            }
+            ${
+              parcela.status
+                ? `
+              <div style="display: flex; justify-content: space-between;">
+                <span style="font-weight: 600; color: #6b7280;">Estado:</span> 
+                <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">${parcela.status}</span>
+              </div>
+            `
+                : ""
+            }
+            <div style="display: flex; justify-content: space-between; font-size: 12px;">
+              <span style="font-weight: 600; color: #6b7280;">Coordenadas:</span>
+              <span style="color: #9ca3af;">Lat: ${parcela.lat.toFixed(6)}, Lng: ${parcela.lng.toFixed(6)}</span>
+            </div>
           </div>
-          ${
-            parcela.area
-              ? `
-            <div style="margin-bottom: 4px;">
-              <span style="font-weight: 600; color: #6b7280;">Área:</span> 
-              <span style="color: #374151;">${parcela.area}</span>
-            </div>
-          `
-              : ""
-          }
-          ${
-            parcela.status
-              ? `
-            <div style="margin-bottom: 4px;">
-              <span style="font-weight: 600; color: #6b7280;">Estado:</span> 
-              <span style="color: #059669; font-weight: 600;">${parcela.status}</span>
-            </div>
-          `
-              : ""
-          }
-          <div style="margin-top: 8px; font-size: 12px; color: #9ca3af;">
-            Lat: ${parcela.lat.toFixed(6)}, Lng: ${parcela.lng.toFixed(6)}
+          
+          <div style="border-top: 1px solid #e5e7eb; padding-top: 12px;">
+            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 6px; font-size: 14px;">Acciones:</label>
+            <select 
+              id="action-select-${parcela.id}" 
+              style="
+                width: 100%;
+                padding: 8px 12px;
+                border: 2px solid #d1d5db;
+                border-radius: 6px;
+                background: white;
+                font-size: 14px;
+                color: #374151;
+                cursor: pointer;
+                transition: all 0.2s ease;
+              "
+              onchange="handleParcelaAction('${parcela.id}', this.value)"
+            >
+              <option value="" style="color: #9ca3af;">Seleccione una acción</option>
+              <option value="edit">Editar parcela</option>
+              <option value="delete">Eliminar parcela</option>
+            </select>
           </div>
         </div>
       `;
 
       marker.bindPopup(popupContent, {
-        maxWidth: 300,
+        maxWidth: 320,
         className: "custom-popup",
       });
     });
@@ -105,6 +154,7 @@ export default function LeafletMap({
       if (mapInstance.current) {
         mapInstance.current.remove();
       }
+      delete (window as any).handleParcelaAction;
     };
   }, [center, zoom, parcelas]);
 
