@@ -88,50 +88,51 @@ function Usuarios() {
         onButtonClick={handleConfirm}
       >
         {modalType === "add" || modalType === "edit" ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Nombre
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Nombre completo
               </label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-                placeholder="Nombre completo"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="Ingrese el nombre completo"
                 value={nombre}
                 onChange={e => setNombre(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Correo
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Correo electrónico
               </label>
               <input
                 type="email"
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-                placeholder="Correo electrónico"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="ejemplo@correo.com"
                 value={correo}
                 onChange={e => setCorreo(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Parcelas
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Cantidad de parcelas
               </label>
               <input
                 type="number"
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-                placeholder="Cantidad de parcelas"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="0"
                 value={parcelas}
                 onChange={e => setParcelas(Number(e.target.value))}
                 min={0}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Rol
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Rol del usuario
               </label>
               <select
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                title="Seleccionar rol del usuario"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                 value={rol}
                 onChange={e => setRol(e.target.value)}
               >
@@ -142,8 +143,18 @@ function Usuarios() {
             </div>
           </div>
         ) : (
-          <div className="text-sm text-gray-600">
-            Esta acción no se puede deshacer.
+          <div className="text-center py-4">
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">
+              Esta acción no se puede deshacer.
+            </p>
+            <p className="text-xs text-gray-500">
+              Se eliminará permanentemente el usuario y todos sus datos asociados.
+            </p>
           </div>
         )}
       </Modal>
