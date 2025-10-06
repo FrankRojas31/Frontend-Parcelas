@@ -8,7 +8,7 @@ export default function Menu() {
   const menuItems = [
     { icon: FiHome, label: "Dashboard", path: "/" },
     { icon: FiGrid, label: "Parcelas", path: "/parcelas" },
-    { icon: FiUser, label: "Usuario", path: "/usuario" },
+    { icon: FiUser, label: "Usuario", path: "/usuarios" },
     { icon: FiSettings, label: "Configuración", path: "/configuracion" },
   ];
 
