@@ -1,132 +1,201 @@
-import { User, Mail, Lock } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, MapPin, UserPlus } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    lastname: "",
+    email: "",
+    password: "",
+    confirmPassword: ""
+  });
+  const navigate = useNavigate();
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (formData.password !== formData.confirmPassword) {
+      alert("Las contraseñas no coinciden");
+      return;
+    }
+
+    // Aquí agregarías la lógica de registro
+    console.log("Register:", formData);
+    navigate("/login");
+  };
+
   return (
     <div
-      className="relative flex items-center justify-center min-h-screen bg-cover bg-center p-15"
+      className="relative min-h-screen bg-cover bg-center p-4 overflow-y-auto"
       style={{ backgroundImage: 'url("/background.jpg")' }}
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm"></div>
 
-      <form className="relative z-10 bg-white/20 backdrop-blur-md rounded-3xl shadow-2xl border border-white/30 px-10 py-12 w-[90%] max-w-md flex flex-col items-center animate-fadeIn">
-        <h2 className="text-4xl font-semibold text-white mb-8 tracking-wide">
-          Crear Cuenta
-        </h2>
-
-        <div className="w-full flex flex-col space-y-5">
-          <div className="flex flex-col text-left">
-            <label
-              htmlFor="name"
-              className="mb-2 text-gray-200 font-medium tracking-wide"
-            >
-              Nombre
-            </label>
-            <div className="relative">
-              <User className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
-              <input
-                id="name"
-                type="text"
-                placeholder="Tu nombre"
-                required
-                className="w-full pl-10 pr-4 py-2.5 bg-white/70 text-gray-800 border border-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
-              />
+      <div className="relative z-10 flex items-center justify-center min-h-screen py-8">
+        <div className="w-full max-w-lg">
+         
+          <form onSubmit={handleSubmit} className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-6">
+            <div className="flex items-center justify-center mb-6">
+              <UserPlus className="w-6 h-6 text-emerald-600 mr-2" />
+              <h2 className="text-xl font-bold text-gray-800">
+                Crear Nueva Cuenta
+              </h2>
             </div>
-          </div>
 
-          <div className="flex flex-col text-left">
-            <label
-              htmlFor="lastname"
-              className="mb-2 text-gray-200 font-medium tracking-wide"
-            >
-              Apellidos
-            </label>
-            <div className="relative">
-              <User className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
-              <input
-                id="lastname"
-                type="text"
-                placeholder="Tus apellidos"
-                required
-                className="w-full pl-10 pr-4 py-2.5 bg-white/70 text-gray-800 border border-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
-              />
-            </div>
-          </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-1">
+                    Nombre
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Juan"
+                      required
+                      className="w-full pl-9 pr-3 py-2.5 bg-white text-gray-800 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 form-input text-sm"
+                    />
+                  </div>
+                </div>
 
-          <div className="flex flex-col text-left">
-            <label
-              htmlFor="email"
-              className="mb-2 text-gray-200 font-medium tracking-wide"
-            >
-              Correo
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
-              <input
-                id="email"
-                type="email"
-                placeholder="correo@ejemplo.com"
-                required
-                className="w-full pl-10 pr-4 py-2.5 bg-white/70 text-gray-800 border border-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
-              />
-            </div>
-          </div>
+                <div>
+                  <label htmlFor="lastname" className="block text-sm font-semibold text-gray-700 mb-1">
+                    Apellidos
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                    <input
+                      id="lastname"
+                      name="lastname"
+                      type="text"
+                      value={formData.lastname}
+                      onChange={handleInputChange}
+                      placeholder="Pérez"
+                      required
+                      className="w-full pl-9 pr-3 py-2.5 bg-white text-gray-800 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 form-input text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
 
-          <div className="flex flex-col text-left">
-            <label
-              htmlFor="password"
-              className="mb-2 text-gray-200 font-medium tracking-wide"
-            >
-              Contraseña
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
-              <input
-                id="password"
-                type="password"
-                placeholder="********"
-                required
-                className="w-full pl-10 pr-4 py-2.5 bg-white/70 text-gray-800 border border-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
-              />
-            </div>
-          </div>
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">
+                  Correo Electrónico
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="juan@parcelas.com"
+                    required
+                    className="w-full pl-9 pr-3 py-2.5 bg-white text-gray-800 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 form-input text-sm"
+                  />
+                </div>
+              </div>
 
-          <div className="flex flex-col text-left">
-            <label
-              htmlFor="confirmPassword"
-              className="mb-2 text-gray-200 font-medium tracking-wide"
-            >
-              Confirmar Contraseña
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
-              <input
-                id="confirmPassword"
-                type="password"
-                placeholder="********"
-                required
-                className="w-full pl-10 pr-4 py-2.5 bg-white/70 text-gray-800 border border-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
-              />
+              <div>
+                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1">
+                  Contraseña
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="Mínimo 8 caracteres"
+                    required
+                    minLength={8}
+                    className="w-full pl-9 pr-10 py-2.5 bg-white text-gray-800 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 form-input text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-1">
+                  Confirmar Contraseña
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    placeholder="Repite tu contraseña"
+                    required
+                    className="w-full pl-9 pr-10 py-2.5 bg-white text-gray-800 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 form-input text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleConfirmPasswordVisibility}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+             
             </div>
-          </div>
+
+            <button
+              type="submit"
+              className="w-full mt-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold rounded-lg shadow-lg hover:from-emerald-700 hover:to-emerald-800 hover:shadow-xl active:scale-[0.98] transition-all duration-200 text-sm btn-parcelas"
+            >
+              Crear Cuenta
+            </button>
+
+            <p className="mt-4 text-center text-gray-600 text-xs">
+              ¿Ya tienes una cuenta?{" "}
+              <a
+                href="/login"
+                className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
+              >
+                Iniciar sesión
+              </a>
+            </p>
+          </form>
         </div>
-
-        <button
-          type="submit"
-          className="mt-8 w-3/4 py-2.5 bg-indigo-500 text-white font-semibold rounded-full shadow-md hover:bg-indigo-600 hover:shadow-lg active:scale-95 transition-all duration-200"
-        >
-          Registrarse
-        </button>
-
-        <p className="mt-6 text-gray-200 text-sm">
-          ¿Ya tienes una cuenta?{" "}
-          <a
-            href="/login"
-            className="text-indigo-300 hover:text-indigo-400 underline transition-colors"
-          >
-            Inicia sesión
-          </a>
-        </p>
-      </form>
+      </div>
     </div>
   );
 };
