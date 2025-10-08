@@ -51,24 +51,28 @@ export default function Card({
   return (
     <div
       className={`${
-        props.secondary === true ? "border border-gray-300" : ""
-      } bg-white rounded-lg shadow-lg ${props.className}`}
+        props.secondary === true ? "border border-white/30" : ""
+      } bg-white/20 backdrop-blur-md rounded-lg shadow-lg border border-white/20 ${
+        props.className
+      }`}
     >
       {props.title && (
         <>
           <div className="flex items-center justify-between px-4 py-3">
-            <h3 className="text-lg font-semibold">{props.title}</h3>
+            <h3 className="text-lg font-semibold text-white drop-shadow-lg">
+              {props.title}
+            </h3>
             {buttonConfig && (
               <button
                 onClick={onButtonClick}
-                className={`${buttonConfig.className} ease-in-out duration-300 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors`}
+                className={`${buttonConfig.className} ease-in-out duration-300 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors backdrop-blur-sm`}
               >
                 <buttonConfig.icon className="text-xl" />
                 <span>{buttonConfig.text}</span>
               </button>
             )}
           </div>
-          <hr className="border-gray-300" />
+          <hr className="border-white/30" />
         </>
       )}
       {props.children}

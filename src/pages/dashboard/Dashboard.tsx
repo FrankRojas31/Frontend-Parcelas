@@ -58,17 +58,10 @@ function Dashboard() {
     <>
       <LayoutAdmin title="Dashboard - Gestión de Parcelas">
         <div className=" max-w-7xl mx-auto mb-8">
-       
-
           <div className="lg:col-span-2">
             <MapCard
               title="Mapa de parcelas vigentes"
-              date={new Date().toLocaleDateString("es-ES", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
+              apiEndpoint="http://localhost:3000/api/parcelas-mongo/"
             />
           </div>
 
