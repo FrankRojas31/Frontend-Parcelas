@@ -4,53 +4,34 @@ import StatsCard from "../../components/custom/StatsCard";
 import ChartCard from "../../components/custom/ChartCard";
 import { LayoutAdmin } from "../../layout/admin/Layout.component";
 import Card from "../../components/custom/Card.component";
-import { FiSun, FiTrendingUp, FiActivity, FiUsers } from "react-icons/fi";
+import { FiSun, FiTrendingUp, FiActivity } from "react-icons/fi";
 
 function Dashboard() {
-  const historyItems = [
-    {
-      id: "1",
-      text: "Parcela de tierra agrícola eliminada el 01 Septiembre 2025",
-      date: "01 Septiembre 2025",
-    },
-    {
-      id: "2",
-      text: "Parcela de tierra agrícola eliminada el 01 Septiembre 2025",
-      date: "01 Septiembre 2025",
-    },
-    {
-      id: "3",
-      text: "Parcela de tierra agrícola eliminada el 01 Septiembre 2025",
-      date: "01 Septiembre 2025",
-    },
-    {
-      id: "4",
-      text: "Parcela de tierra agrícola eliminada el 01 Septiembre 2025",
-      date: "01 Septiembre 2025",
-    },
-  ];
 
   const chartCards = [
     {
-      title: "Humedad",
-      subtitle: "Enero - Octubre 2024",
+      title: "Humedad del Suelo",
+      subtitle: "Promedio últimos 7 días",
       icon: FiActivity,
-      trending: "Incremento del 6.2% este mes",
+      trending: "Datos en tiempo real de sensores IoT",
       chartType: "bar" as const,
+      sensorType: "humedad" as const,
     },
     {
-      title: "Temperatura",
-      subtitle: "Enero - Octubre 2024",
+      title: "Temperatura Ambiente",
+      subtitle: "Tendencia últimos 7 días",
       icon: FiTrendingUp,
-      trending: "Incremento del 5.2% este mes",
+      trending: "Monitoreo continuo 24/7",
       chartType: "line" as const,
+      sensorType: "temperatura" as const,
     },
     {
-      title: "Distribución de cultivos",
-      subtitle: "Enero - Octubre 2024",
-      icon: FiUsers,
-      trending: "Incremento del 8.2% este mes",
+      title: "Precipitación",
+      subtitle: "Registro últimos 7 días",
+      icon: FiSun,
+      trending: "Datos pluviométricos en tiempo real",
       chartType: "donut" as const,
+      sensorType: "lluvia" as const,
     },
   ];
 
@@ -61,7 +42,7 @@ function Dashboard() {
           <div className="lg:col-span-2">
             <MapCard
               title="Mapa de parcelas vigentes"
-              apiEndpoint="http://localhost:3000/api/parcelas-mongo/"
+              apiEndpoint="http://localhost:3000/api/parcelas/"
             />
           </div>
 
@@ -76,6 +57,7 @@ function Dashboard() {
                     icon={card.icon}
                     trending={card.trending}
                     chartType={card.chartType}
+                    sensorType={card.sensorType}
                   />
                 ))}
               </div>
@@ -84,7 +66,7 @@ function Dashboard() {
 
           <div className="lg:col-span-3">
             <Card title="Historial de parcelas eliminadas">
-              <HistoryCard items={historyItems} />
+              <HistoryCard />
             </Card>
           </div>
         </div>

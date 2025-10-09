@@ -1,5 +1,6 @@
 import { buildApiUrl, API_CONFIG } from "../config/api.config";
 import type { Rol, ApiResponse } from "../types";
+import { SweetAlert } from "../components/custom/SweetAlert";
 
 const API_BASE_URL = buildApiUrl(API_CONFIG.ENDPOINTS.ROLES);
 

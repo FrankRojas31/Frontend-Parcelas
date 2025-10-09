@@ -122,18 +122,18 @@ const CrudUsuarios: React.FC<CrudUsuariosProps> = ({
   }
 
   return (
-    <div className="rounded-lg border bg-white p-6">
+    <div className="rounded-lg border bg-white/10 backdrop-blur-md  p-6">
       <div className="mb-6">
         <div className="relative max-w-sm">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <FiSearch className="h-4 w-4 text-gray-400" />
+            <FiSearch className="h-4 w-4 text-white/70" />
           </div>
           <input
             type="text"
             placeholder="Buscar usuarios..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            className="block w-full pl-10 pr-3 py-2 border border-white/30 rounded-md leading-5 bg-white/20 backdrop-blur-md placeholder-gray-300 text-white focus:outline-none focus:placeholder-white-400 focus:ring-1 focus:ring-white-500 focus:border-white-500 text-sm"
           />
         </div>
       </div>

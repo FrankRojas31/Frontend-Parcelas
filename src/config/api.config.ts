@@ -7,6 +7,7 @@ export const API_CONFIG = {
     ROLES: '/api/roles',
     PERSONAS: '/api/personas',
     LOGS: '/api/logs',
+    SENSORES: '/api/external/sensors',  // Endpoint para datos de sensores MongoDB
   }
 };
 
