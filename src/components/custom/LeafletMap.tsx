@@ -61,6 +61,9 @@ interface LeafletMapProps {
   onDeleteParcela?: (
     parcela: GroupedSensorData | RawParcela | TransformedParcela
   ) => void;
+  onAddResponsable?: (
+    parcela: GroupedSensorData | RawParcela | TransformedParcela
+  ) => void;
 }
 
 // Función para determinar el tipo de dato
@@ -87,6 +90,8 @@ interface ExtendedMarker {
   status: string;
   sensorType?: string;
   area?: string;
+  hasResponsable?: boolean;
+  responsable?: string | null;
 }
 const expandGroupedData = (
   groupedData: GroupedSensorData
@@ -121,7 +126,7 @@ const expandGroupedData = (
 
 // Función para normalizar datos
 const normalizeParcela = (
-  parcela: RawParcela | TransformedParcela,
+  parcela: RawParcela | TransformedParcela | any,
   index: number
 ): {
   id: string;
@@ -132,8 +137,29 @@ const normalizeParcela = (
   timestamp: string;
   status: string;
   area?: string;
+  hasResponsable?: boolean;
+  responsable?: string | null;
 } => {
-  if (isRawParcela(parcela)) {
+  // Datos con nueva estructura que incluye responsables
+  if (parcela.coords && parcela.sensores) {
+    const temperatura = parcela.sensores.temperatura?.[0];
+    const responsableStr = parcela.responsable 
+      ? `${parcela.responsable.persona?.nombre || parcela.responsable.username} ${parcela.responsable.persona?.apellido_paterno || ''}`.trim()
+      : null;
+
+    return {
+      id: parcela._id,
+      lat: parcela.coords.lat,
+      lng: parcela.coords.lon,
+      name: parcela.nombre || `Parcela #${index + 1}`,
+      temperature: temperatura ? `${temperatura.value}${temperatura.unit}` : "N/A",
+      timestamp: new Date(parcela.timestamp).toLocaleString("es-ES"),
+      status: parcela.isDeleted ? "Inactivo" : "Activo",
+      area: undefined,
+      hasResponsable: parcela.hasResponsable || false,
+      responsable: responsableStr,
+    };
+  } else if (isRawParcela(parcela)) {
     // Transformar dato crudo - mejorar el nombre del sensor
     const sensorName =
       parcela.unit === "°C"
@@ -177,6 +203,7 @@ export default function LeafletMap({
   showActions = false,
   onEditParcela,
   onDeleteParcela,
+  onAddResponsable,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
@@ -362,6 +389,8 @@ export default function LeafletMap({
           onEditParcela(originalParcela);
         } else if (action === "delete" && onDeleteParcela) {
           onDeleteParcela(originalParcela);
+        } else if (action === "add" && onAddResponsable) {
+          onAddResponsable(originalParcela);
         }
 
         const selectElement = document.getElementById(
@@ -519,8 +548,10 @@ export default function LeafletMap({
                 onchange="handleParcelaAction('${normalized.id}', this.value)"
               >
                 <option value="" style="color: #9ca3af;">Seleccione una acción</option>
-                <option value="edit">Editar parcela</option>
-                <option value="delete">Eliminar parcela</option>
+                ${normalized.hasResponsable 
+                  ? '<option value="edit">Editar responsable</option><option value="delete">Quitar responsable</option>' 
+                  : '<option value="add">Asignar responsable</option>'
+                }
               </select>
             </div>
             `
