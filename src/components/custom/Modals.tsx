@@ -65,28 +65,24 @@ export default function Modal({
       <DialogContent className={`sm:max-w-[500px] ${className}`}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          {description && (
-            <DialogDescription>{description}</DialogDescription>
-          )}
+          {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        
-        <div className="px-6 py-4">
-          {children}
-        </div>
-        
+
+        <div className="px-6 py-4">{children}</div>
+
         <DialogFooter>
           <div className="flex gap-3 w-full">
             {shouldShowCancelButton && (
-              <Button variant="outline" onClick={onClose} className="flex-1">
+              <Button variant="outline" onClick={onClose} className="flex-1 bg-white/20 hover:bg-white/30 text-white">
                 Cancelar
               </Button>
             )}
-            <Button 
-              variant={getButtonVariant()} 
+            <Button
+              variant={getButtonVariant()}
               onClick={onButtonClick}
               className={`flex-1 ${
-                (type === "add" || type === "edit") 
-                  ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                type === "add" || type === "edit"
+                  ? "bg-green-600/80 hover:bg-green-700/80 text-white border"
                   : ""
               }`}
             >
