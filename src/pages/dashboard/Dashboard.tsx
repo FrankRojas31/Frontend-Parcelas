@@ -1,13 +1,11 @@
 import HistoryCard from "../../components/custom/HistoryCard";
 import MapCard from "../../components/custom/MapCard";
-import StatsCard from "../../components/custom/StatsCard";
 import ChartCard from "../../components/custom/ChartCard";
 import { LayoutAdmin } from "../../layout/admin/Layout.component";
 import Card from "../../components/custom/Card.component";
 import { FiSun, FiTrendingUp, FiActivity } from "react-icons/fi";
 
 function Dashboard() {
-
   const chartCards = [
     {
       title: "Humedad del Suelo",
@@ -42,7 +40,7 @@ function Dashboard() {
           <div className="lg:col-span-2">
             <MapCard
               title="Mapa de parcelas vigentes"
-              apiEndpoint="http://localhost:3000/api/parcelas/"
+              apiEndpoint="http://localhost:3000/api/parcelas-mongo/"
             />
           </div>
 
@@ -64,7 +62,7 @@ function Dashboard() {
             </Card>
           </div>
 
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 mb-10">
             <Card title="Historial de parcelas eliminadas">
               <HistoryCard />
             </Card>

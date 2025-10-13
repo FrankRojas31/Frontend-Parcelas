@@ -122,7 +122,7 @@ const CrudUsuarios: React.FC<CrudUsuariosProps> = ({
   }
 
   return (
-    <div className="rounded-lg border bg-white/10 backdrop-blur-md  p-6">
+    <div className="p-6">
       <div className="mb-6">
         <div className="relative max-w-sm">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -141,7 +141,7 @@ const CrudUsuarios: React.FC<CrudUsuariosProps> = ({
       <div className="rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-lime-600 hover:bg-lime-700">
+            <TableRow className="bg-white/30 hover:bg-white/40 ease-in-out duration-400">
               <TableHead className="text-white font-bold">Nombre</TableHead>
               <TableHead className="text-white font-bold">Correo</TableHead>
               <TableHead className="text-white font-bold">Teléfono</TableHead>
@@ -274,11 +274,11 @@ const CrudUsuarios: React.FC<CrudUsuariosProps> = ({
         </div>
       ) : (
         <div className="mt-6 text-center py-8">
-          <FiSearch className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <FiSearch className="mx-auto h-12 w-12 text-white mb-4" />
+          <h3 className="text-lg font-medium text-white mb-2">
             No se encontraron usuarios
           </h3>
-          <p className="text-gray-500">
+          <p className="text-white">
             Intenta con diferentes términos de búsqueda.
           </p>
         </div>
