@@ -105,7 +105,7 @@ function HistoryCard({ className = "" }: HistoryCardProps) {
         ) : (
           logs.map((log) => (
             <div
-              key={log.id}
+              key={log.id_log?.toString() || log.id?.toString()}
               className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border-l-4 border-red-400"
             >
               <div className="flex-shrink-0">
@@ -135,7 +135,7 @@ function HistoryCard({ className = "" }: HistoryCardProps) {
                     {getUsuarioInfo(log)}
                   </p>
                   <p className="text-xs text-black-500">
-                    {formatFecha(log.fecha_creacion)}
+                    {formatFecha(log.fecha || log.fecha_creacion || new Date().toISOString())}
                   </p>
                 </div>
               </div>
