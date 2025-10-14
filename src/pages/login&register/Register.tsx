@@ -1,16 +1,23 @@
-import { User, Mail, Lock, Eye, EyeOff, MapPin, UserPlus } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { registerUser } from "../../services/auth.service";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
+    username: "",
     name: "",
     lastname: "",
     email: "",
     password: "",
     confirmPassword: "",
+    telefono: "",
+    direccion: "",
+    fechaNacimiento: "",
   });
   const navigate = useNavigate();
 
@@ -30,17 +37,59 @@ const Register = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Las contraseñas no coinciden");
+      setError("Las contraseñas no coinciden");
       return;
     }
 
-    // Aquí agregarías la lógica de registro
-    console.log("Register:", formData);
-    navigate("/login");
+    if (
+      !formData.username ||
+      !formData.name ||
+      !formData.lastname ||
+      !formData.email ||
+      !formData.password
+    ) {
+      setError("Por favor, completa todos los campos obligatorios");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const registerData = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        nombre: formData.name,
+        apellido_paterno: formData.lastname,
+        apellido_materno: "", // Campo opcional
+        telefono: formData.telefono || "",
+        direccion: formData.direccion || "",
+        fecha_nacimiento: formData.fechaNacimiento || "",
+      };
+
+      const response = await registerUser(registerData);
+
+      if (response.success) {
+        // Registro exitoso, redirigir al login
+        navigate("/login");
+      } else {
+        setError(response.message || "Error en el registro");
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Error al registrar usuario. Por favor, intenta de nuevo.";
+      setError(errorMessage);
+      console.error("Error en registro:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -108,6 +157,28 @@ const Register = () => {
                       className="w-full pl-9 pr-3 py-2.5 bg-white/10 text-white border-2 border-white rounded-lg focus:outline-none form-input text-sm placeholder-gray-300"
                     />
                   </div>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-semibold text-white mb-1"
+                >
+                  Nombre de Usuario
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    placeholder="juan_perez"
+                    required
+                    className="w-full pl-9 pr-3 py-2.5 bg-white/10 text-white border-2 border-white rounded-lg focus:outline-none form-input text-sm placeholder-gray-300"
+                  />
                 </div>
               </div>
 
@@ -201,11 +272,18 @@ const Register = () => {
               </div>
             </div>
 
+            {error && (
+              <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                <p className="text-red-200 text-sm text-center">{error}</p>
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full mt-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold rounded-lg shadow-lg hover:from-emerald-700 hover:to-emerald-800 hover:shadow-xl active:scale-[0.98] transition-all duration-200 text-sm btn-parcelas"
+              disabled={isLoading}
+              className="w-full mt-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold rounded-lg shadow-lg hover:from-emerald-700 hover:to-emerald-800 hover:shadow-xl active:scale-[0.98] transition-all duration-200 text-sm btn-parcelas disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-emerald-600 disabled:hover:to-emerald-700"
             >
-              Crear Cuenta
+              {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
             </button>
 
             <p className="mt-4 text-center text-white text-xs">
