@@ -10,7 +10,7 @@ const Register = () => {
     lastname: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const navigate = useNavigate();
 
@@ -24,15 +24,15 @@ const Register = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       alert("Las contraseñas no coinciden");
       return;
@@ -52,11 +52,14 @@ const Register = () => {
 
       <div className="relative z-10 flex items-center justify-center min-h-screen py-8">
         <div className="w-full max-w-lg">
-         
-          <form onSubmit={handleSubmit} className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-6">
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-6 transform transition-all duration-500 ease-out"
+            style={{ animation: "slideInUp 0.5s ease-out" }}
+          >
             <div className="flex items-center justify-center mb-6">
-              <UserPlus className="w-6 h-6 text-emerald-600 mr-2" />
-              <h2 className="text-xl font-bold text-gray-800">
+              <UserPlus className="w-6 h-6 text-white mr-2" />
+              <h2 className="text-xl font-bold text-white">
                 Crear Nueva Cuenta
               </h2>
             </div>
@@ -64,11 +67,14 @@ const Register = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-semibold text-white mb-1"
+                  >
                     Nombre
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                       id="name"
                       name="name"
@@ -77,17 +83,20 @@ const Register = () => {
                       onChange={handleInputChange}
                       placeholder="Juan"
                       required
-                      className="w-full pl-9 pr-3 py-2.5 bg-white text-gray-800 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 form-input text-sm"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white/10 text-white border-2 border-white rounded-lg focus:outline-none form-input text-sm placeholder-gray-300"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="lastname" className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label
+                    htmlFor="lastname"
+                    className="block text-sm font-semibold text-white mb-1"
+                  >
                     Apellidos
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                       id="lastname"
                       name="lastname"
@@ -96,18 +105,21 @@ const Register = () => {
                       onChange={handleInputChange}
                       placeholder="Pérez"
                       required
-                      className="w-full pl-9 pr-3 py-2.5 bg-white text-gray-800 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 form-input text-sm"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white/10 text-white border-2 border-white rounded-lg focus:outline-none form-input text-sm placeholder-gray-300"
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-semibold text-white mb-1"
+                >
                   Correo Electrónico
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     id="email"
                     name="email"
@@ -116,17 +128,20 @@ const Register = () => {
                     onChange={handleInputChange}
                     placeholder="juan@parcelas.com"
                     required
-                    className="w-full pl-9 pr-3 py-2.5 bg-white text-gray-800 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 form-input text-sm"
+                    className="w-full pl-9 pr-3 py-2.5 bg-white/10 text-white border-2 border-white rounded-lg focus:outline-none form-input text-sm placeholder-gray-300"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold text-white mb-1"
+                >
                   Contraseña
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     id="password"
                     name="password"
@@ -136,24 +151,31 @@ const Register = () => {
                     placeholder="Mínimo 8 caracteres"
                     required
                     minLength={8}
-                    className="w-full pl-9 pr-10 py-2.5 bg-white text-gray-800 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 form-input text-sm"
+                    className="w-full pl-9 pr-10 py-2.5 bg-white/10 text-white border-2 border-white rounded-lg focus:outline-none form-input text-sm placeholder-gray-300"
                   />
                   <button
                     type="button"
                     onClick={togglePasswordVisibility}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-1">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-semibold text-white mb-1"
+                >
                   Confirmar Contraseña
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     id="confirmPassword"
                     name="confirmPassword"
@@ -162,19 +184,21 @@ const Register = () => {
                     onChange={handleInputChange}
                     placeholder="Repite tu contraseña"
                     required
-                    className="w-full pl-9 pr-10 py-2.5 bg-white text-gray-800 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 form-input text-sm"
+                    className="w-full pl-9 pr-10 py-2.5 bg-white/10 text-white border-2 border-white rounded-lg focus:outline-none form-input text-sm placeholder-gray-300"
                   />
                   <button
                     type="button"
                     onClick={toggleConfirmPasswordVisibility}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                   >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
-
-             
             </div>
 
             <button
@@ -184,11 +208,11 @@ const Register = () => {
               Crear Cuenta
             </button>
 
-            <p className="mt-4 text-center text-gray-600 text-xs">
+            <p className="mt-4 text-center text-white text-xs">
               ¿Ya tienes una cuenta?{" "}
               <a
                 href="/login"
-                className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
+                className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
               >
                 Iniciar sesión
               </a>
