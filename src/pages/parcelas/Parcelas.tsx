@@ -580,11 +580,12 @@ function Parcelas() {
               </label>
               <select
                 ref={usuarioRef}
+                key={`usuario-${selectedParcela?._id || 'new'}-${selectedParcela?.responsable?.id || 'none'}`}
                 title="Usuario responsable"
                 className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
                 defaultValue={
                   modalType === "edit" && selectedParcela && selectedParcela.responsable
-                    ? selectedParcela.responsable.id
+                    ? selectedParcela.responsable.id.toString()
                     : ""
                 }
               >
