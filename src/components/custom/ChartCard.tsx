@@ -10,6 +10,15 @@ interface ChartCardProps {
   chartType: "bar" | "line" | "donut";
   sensorType?: "temperatura" | "humedad" | "ph" | "fertilizante" | "lluvia";
   data?: ChartDataPoint[];
+  stats?: {
+    min?: number;
+    max?: number;
+    avg?: number;
+    count?: number;
+    unit?: string;
+  } | null;
+  loadingStats?: boolean;
+  errorStats?: string | null;
 }
 
 export default function ChartCard({
@@ -20,6 +29,9 @@ export default function ChartCard({
   chartType,
   sensorType,
   data: providedData,
+  stats,
+  loadingStats,
+  errorStats,
 }: ChartCardProps) {
   const [data, setData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +88,7 @@ export default function ChartCard({
     loadData();
   }, [sensorType, providedData]);
 
-  if (loading) {
+  if (loading || loadingStats) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -100,7 +112,7 @@ export default function ChartCard({
     );
   }
 
-  if (error) {
+  if (error || errorStats) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -161,10 +173,9 @@ export default function ChartCard({
 
   const renderChart = () => {
     switch (chartType) {
-      case "bar":
+      case "bar": {
         const barValues = getChartValues();
         if (barValues.length === 0) return getNoDataMessage();
-        
         return (
           <div className="space-y-2">
             <div className="h-32 flex items-end justify-center gap-2">
@@ -179,18 +190,15 @@ export default function ChartCard({
             </div>
             <div className="flex justify-between text-xs text-gray-500 px-2">
               <span>{data.length > 0 ? `${data.length} días` : 'Sin datos'}</span>
-              <span>Promedio: {(() => {
-                const validValues = data.map(d => d.value).filter(val => !isNaN(val) && val != null);
-                return validValues.length > 0 ? (validValues.reduce((sum, val) => sum + val, 0) / validValues.length).toFixed(1) : '0';
-              })()}{getUnit(sensorType)}</span>
+              <span>Promedio: {stats && typeof stats.avg === 'number' ? stats.avg.toFixed(1) : '0'}{getUnit(sensorType)}</span>
             </div>
           </div>
         );
+      }
 
-      case "line":
+      case "line": {
         const lineValues = getChartValues();
         if (lineValues.length === 0) return getNoDataMessage();
-        
         const linePoints = lineValues.map((value, index) => {
           const x = 20 + (index * 240 / Math.max(1, lineValues.length - 1));
           const y = 100 - value;
@@ -198,13 +206,10 @@ export default function ChartCard({
           if (isNaN(x) || isNaN(y)) return null;
           return `${x},${y}`;
         }).filter(point => point !== null).join(' ');
-        
         if (!linePoints || lineValues[0] == null || isNaN(lineValues[0])) {
           return getNoDataMessage();
         }
-        
         const areaPath = `M20,${100 - lineValues[0]} ${linePoints.split(' ').join(' L')} L260,100 L20,100 Z`;
-        
         return (
           <div className="space-y-2">
             <div className="h-32 flex items-center">
@@ -215,7 +220,6 @@ export default function ChartCard({
                     <stop offset="100%" stopColor="#059669" stopOpacity="0.1" />
                   </linearGradient>
                 </defs>
-                
                 <path d={areaPath} fill="url(#lineGradient)" />
                 <polyline
                   fill="none"
@@ -225,19 +229,16 @@ export default function ChartCard({
                   strokeLinejoin="round"
                   points={linePoints}
                 />
-                
                 {lineValues.map((value, index) => {
                   const x = 20 + (index * 240 / Math.max(1, lineValues.length - 1));
                   const y = 100 - value;
                   const actualValue = data[index]?.value || 0;
                   const unit = getUnit(sensorType);
                   const date = data[index]?.timestamp ? new Date(data[index].timestamp).toLocaleDateString() : '';
-                  
                   // Solo renderizar círculo si x e y son válidos
                   if (isNaN(x) || isNaN(y) || x < 0 || y < 0) {
                     return null;
                   }
-                  
                   return (
                     <circle 
                       key={index}
@@ -256,34 +257,27 @@ export default function ChartCard({
             </div>
             <div className="flex justify-between text-xs text-gray-500 px-2">
               <span>Últimos {data.length} días</span>
-              <span>Máx: {(() => {
-                const validValues = data.map(d => d.value).filter(val => !isNaN(val) && val != null);
-                return validValues.length > 0 ? Math.max(...validValues).toFixed(1) : '0';
-              })()}{getUnit(sensorType)}</span>
+              <span>Máx: {stats && typeof stats.max === 'number' ? stats.max.toFixed(1) : '0'}{getUnit(sensorType)}</span>
             </div>
           </div>
         );
+      }
 
-      case "donut":
+      case "donut": {
         if (data.length === 0) return getNoDataMessage();
-        
         const totalRainfall = data.reduce((sum, d) => sum + d.value, 0);
-        
         // Categorizar la lluvia: ligera (<2mm), moderada (2-10mm), fuerte (>10mm)
         const lightRain = data.filter(d => d.value < 2).length;
         const moderateRain = data.filter(d => d.value >= 2 && d.value <= 10).length;
         const heavyRain = data.filter(d => d.value > 10).length;
         const totalReadings = data.length;
-        
         const lightPercent = totalReadings > 0 ? (lightRain / totalReadings) * 100 : 0;
         const moderatePercent = totalReadings > 0 ? (moderateRain / totalReadings) * 100 : 0;
         const heavyPercent = totalReadings > 0 ? (heavyRain / totalReadings) * 100 : 0;
-        
         const circumference = 2 * Math.PI * 22;
         const lightArc = (lightPercent / 100) * circumference;
         const moderateArc = (moderatePercent / 100) * circumference;
         const heavyArc = (heavyPercent / 100) * circumference;
-        
         return (
           <div className="space-y-2">
             <div className="h-32 flex items-center justify-between">
@@ -291,7 +285,6 @@ export default function ChartCard({
                 <div className="relative">
                   <svg className="w-50 h-50" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r="22" fill="none" stroke="#f3f4f6" strokeWidth="10" />
-                    
                     {lightPercent > 0 && (
                       <circle
                         cx="50" cy="50" r="22" fill="none" stroke="#22d3ee" strokeWidth="10"
@@ -299,7 +292,6 @@ export default function ChartCard({
                         strokeDashoffset="0" transform="rotate(-90 50 50)" strokeLinecap="round"
                       />
                     )}
-                    
                     {moderatePercent > 0 && (
                       <circle
                         cx="50" cy="50" r="22" fill="none" stroke="#3b82f6" strokeWidth="10"
@@ -307,7 +299,6 @@ export default function ChartCard({
                         strokeDashoffset={`-${lightArc}`} transform="rotate(-90 50 50)" strokeLinecap="round"
                       />
                     )}
-                    
                     {heavyPercent > 0 && (
                       <circle
                         cx="50" cy="50" r="22" fill="none" stroke="#1e40af" strokeWidth="10"
@@ -316,7 +307,6 @@ export default function ChartCard({
                       />
                     )}
                   </svg>
-                  
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
                       <div className="text-lg font-bold text-gray-800">
@@ -327,7 +317,6 @@ export default function ChartCard({
                   </div>
                 </div>
               </div>
-              
               <div className="flex flex-col gap-2 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-cyan-400 rounded-full"></div>
@@ -345,10 +334,11 @@ export default function ChartCard({
             </div>
             <div className="flex justify-between text-xs text-gray-500 px-2">
               <span>{totalReadings} lecturas</span>
-              <span>Promedio: {totalReadings > 0 ? (totalRainfall / totalReadings).toFixed(1) : '0'}mm/día</span>
+              <span>Promedio: {stats && typeof stats.avg === 'number' ? stats.avg.toFixed(1) : (totalReadings > 0 ? (totalRainfall / totalReadings).toFixed(1) : '0')}mm/día</span>
             </div>
           </div>
         );
+      }
 
       default:
         return null;
@@ -375,37 +365,28 @@ export default function ChartCard({
         {renderChart()}
         
         {/* Estadísticas clave */}
-        {data.length > 0 && (() => {
-          const validValues = data.map(d => d.value).filter(val => !isNaN(val) && val != null);
-          if (validValues.length === 0) return null;
-          
-          const min = Math.min(...validValues);
-          const max = Math.max(...validValues);
-          const avg = validValues.reduce((sum, val) => sum + val, 0) / validValues.length;
-          
-          return (
-            <div className="mt-3 flex justify-between items-center text-xs">
-              <div className="text-center">
-                <div className="font-semibold text-gray-700">
-                  {min.toFixed(1)}{getUnit(sensorType)}
-                </div>
-                <div className="text-gray-500">Mín</div>
+        {stats && (
+          <div className="mt-3 flex justify-between items-center text-xs">
+            <div className="text-center">
+              <div className="font-semibold text-gray-700">
+                {typeof stats.min === 'number' ? stats.min.toFixed(1) : '-'}{getUnit(sensorType)}
               </div>
-              <div className="text-center">
-                <div className="font-semibold text-gray-700">
-                  {avg.toFixed(1)}{getUnit(sensorType)}
-                </div>
-                <div className="text-gray-500">Prom</div>
-              </div>
-              <div className="text-center">
-                <div className="font-semibold text-gray-700">
-                  {max.toFixed(1)}{getUnit(sensorType)}
-                </div>
-                <div className="text-gray-500">Máx</div>
-              </div>
+              <div className="text-gray-500">Mín</div>
             </div>
-          );
-        })()}
+            <div className="text-center">
+              <div className="font-semibold text-gray-700">
+                {typeof stats.avg === 'number' ? stats.avg.toFixed(1) : '-'}{getUnit(sensorType)}
+              </div>
+              <div className="text-gray-500">Prom</div>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-gray-700">
+                {typeof stats.max === 'number' ? stats.max.toFixed(1) : '-'}{getUnit(sensorType)}
+              </div>
+              <div className="text-gray-500">Máx</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats and info */}

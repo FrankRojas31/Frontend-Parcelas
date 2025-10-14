@@ -1,11 +1,34 @@
 import HistoryCard from "../../components/custom/HistoryCard";
 import MapCard from "../../components/custom/MapCard";
 import ChartCard from "../../components/custom/ChartCard";
+import { useEffect, useState } from "react";
+import { getSensorStats } from "../../services/sensors.service";
 import { LayoutAdmin } from "../../layout/admin/Layout.component";
 import Card from "../../components/custom/Card.component";
 import { FiSun, FiTrendingUp, FiActivity } from "react-icons/fi";
 
+
 function Dashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [errorStats, setErrorStats] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoadingStats(true);
+        setErrorStats(null);
+        const s = await getSensorStats();
+        setStats(s);
+      } catch (err) {
+        setErrorStats("Error al cargar estadísticas");
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
   const chartCards = [
     {
       title: "Humedad del Suelo",
@@ -14,6 +37,9 @@ function Dashboard() {
       trending: "Datos en tiempo real de sensores IoT",
       chartType: "bar" as const,
       sensorType: "humedad" as const,
+      stats: stats?.humedad || null,
+      loadingStats,
+      errorStats,
     },
     {
       title: "Temperatura Ambiente",
@@ -22,6 +48,9 @@ function Dashboard() {
       trending: "Monitoreo continuo 24/7",
       chartType: "line" as const,
       sensorType: "temperatura" as const,
+      stats: stats?.temperatura || null,
+      loadingStats,
+      errorStats,
     },
     {
       title: "Precipitación",
@@ -30,6 +59,9 @@ function Dashboard() {
       trending: "Datos pluviométricos en tiempo real",
       chartType: "donut" as const,
       sensorType: "lluvia" as const,
+      // stats: stats?.lluvia || null, // Si agregas stats de lluvia en getSensorStats
+      loadingStats,
+      errorStats,
     },
   ];
 
@@ -56,6 +88,9 @@ function Dashboard() {
                     trending={card.trending}
                     chartType={card.chartType}
                     sensorType={card.sensorType}
+                    stats={card.stats}
+                    loadingStats={card.loadingStats}
+                    errorStats={card.errorStats}
                   />
                 ))}
               </div>
