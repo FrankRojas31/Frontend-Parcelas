@@ -272,7 +272,7 @@ function Parcelas() {
         .animation-delay-75 { animation-delay: 0.075s; }
         .animation-delay-150 { animation-delay: 0.15s; }
       `}</style>
-      <Card title="Parcelas" type="add" onButtonClick={() => openModal("add")}>
+      <Card title="Parcelas">
         <div className="p-4">
           {error && (
             <div className="mb-4 p-3 bg-red-100 text-red-700 rounded border border-red-300">
@@ -300,20 +300,32 @@ function Parcelas() {
                 <LeafletMap
                   center={mapCenter}
                   zoom={mapZoom}
-                  parcelas={parcelas.map(p => ({
-                    coords: p.coords,
-                    sensores: p.sensores,
-                    timestamp: p.timestamp,
-                    isDeleted: p.isDeleted,
-                    // Agregar propiedades faltantes para el tipo
-                    value: p.sensores.temperatura[0]?.value || 0,
-                    unit: p.sensores.temperatura[0]?.unit || "°C",
-                    // Metadata adicional para las acciones
-                    _id: p._id,
-                    responsable: p.responsable,
-                    nombre: p.nombre,
-                    hasResponsable: p.hasResponsable
-                  }))}
+                  parcelas={parcelas.map(p => {
+                    // Detectar qué tipo de sensor tiene la parcela
+                    const sensorTypes = ['temperatura', 'humedad', 'lluvia', 'radiacion_solar'];
+                    const availableSensor = sensorTypes.find(type => 
+                      p.sensores?.[type as keyof typeof p.sensores]?.[0]
+                    );
+                    
+                    const sensorData = availableSensor 
+                      ? p.sensores[availableSensor as keyof typeof p.sensores]?.[0]
+                      : null;
+                    
+                    return {
+                      coords: p.coords,
+                      sensores: p.sensores,
+                      timestamp: p.timestamp,
+                      isDeleted: p.isDeleted,
+                      // Agregar propiedades faltantes para el tipo
+                      value: sensorData?.value || 0,
+                      unit: sensorData?.unit || "°C",
+                      // Metadata adicional para las acciones
+                      _id: p._id,
+                      responsable: p.responsable,
+                      nombre: p.nombre,
+                      hasResponsable: p.hasResponsable
+                    };
+                  })}
                   height="h-[500px]"
                   showActions={true}
                   onEditParcela={(parcela: any) => {
@@ -373,14 +385,14 @@ function Parcelas() {
                 </div>
               </div>
               
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-xl">
                 <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-white uppercase bg-lime-600">
+                  <thead className="text-xs text-black uppercase bg-white/40 ">
                     <tr>
                       <th scope="col" className="px-6 py-3 font-bold">Coordenadas</th>
                       <th scope="col" className="px-6 py-3 font-bold">Nombre</th>
                       <th scope="col" className="px-6 py-3 font-bold">Responsable</th>
-                      <th scope="col" className="px-6 py-3 font-bold">Temperatura</th>
+                      <th scope="col" className="px-6 py-3 font-bold">Tipo</th>
                       <th scope="col" className="px-6 py-3 font-bold">Estado</th>
                       <th scope="col" className="px-6 py-3 font-bold">Acciones</th>
                     </tr>
@@ -431,24 +443,46 @@ function Parcelas() {
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-sm">
-                              {parcela.sensores?.temperatura?.[0]?.value ? (
-                                <span 
-                                  className={`font-medium ${
-                                    parcela.sensores.temperatura[0].value > 30 
-                                      ? 'text-red-600' 
-                                      : parcela.sensores.temperatura[0].value > 25 
-                                        ? 'text-orange-600' 
-                                        : 'text-green-600'
-                                  }`}
-                                >
-                                  {parcela.sensores.temperatura[0].value}
-                                  <span className="text-black/70 ml-1">
-                                    {parcela.sensores.temperatura[0].unit || '°C'}
-                                  </span>
-                                </span>
-                              ) : (
-                                <span className="text-black/60">N/A</span>
-                              )}
+                              {(() => {
+                                // Buscar cualquier tipo de sensor disponible
+                                const sensorTypes = ['temperatura', 'humedad', 'lluvia', 'radiacion_solar'];
+                                const availableSensor = sensorTypes.find(type => 
+                                  parcela.sensores?.[type]?.[0]?.value !== undefined
+                                );
+                                
+                                if (availableSensor && parcela.sensores[availableSensor]?.[0]) {
+                                  const sensor = parcela.sensores[availableSensor][0];
+                                  const value = sensor.value;
+                                  
+                                  // Colores según el tipo y valor
+                                  let colorClass = 'text-gray-600';
+                                  if (availableSensor === 'temperatura') {
+                                    colorClass = value > 30 ? 'text-red-600' : value > 25 ? 'text-orange-600' : 'text-green-600';
+                                  } else if (availableSensor === 'humedad') {
+                                    colorClass = value > 70 ? 'text-blue-600' : value > 50 ? 'text-blue-500' : 'text-blue-400';
+                                  } else if (availableSensor === 'lluvia') {
+                                    colorClass = value > 50 ? 'text-indigo-600' : value > 20 ? 'text-indigo-500' : 'text-indigo-400';
+                                  } else if (availableSensor === 'radiacion_solar') {
+                                    colorClass = value > 800 ? 'text-yellow-600' : value > 400 ? 'text-yellow-500' : 'text-yellow-400';
+                                  }
+                                  
+                                  return (
+                                    <div>
+                                      <span className={`font-medium ${colorClass}`}>
+                                        {value}
+                                        <span className="text-black/70 ml-1">
+                                          {sensor.unit || ''}
+                                        </span>
+                                      </span>
+                                      <div className="text-xs text-black/60 mt-0.5 capitalize">
+                                        {sensor.type?.replace('_', ' ') || availableSensor.replace('_', ' ')}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                
+                                return <span className="text-black/60">N/A</span>;
+                              })()}
                             </div>
                           </td>
                           <td className="px-6 py-4">
