@@ -1,7 +1,8 @@
 import { buildApiUrl } from '../config/api.config';
 
 export interface LogEntry {
-  id: string;
+  id_log?: string | bigint;
+  id?: string | bigint; // Alias para compatibilidad
   id_usuario?: number;
   accion: string;
   descripcion?: string;
@@ -9,7 +10,8 @@ export interface LogEntry {
   id_entidad_afectada?: number;
   ip_origen?: string;
   user_agent?: string;
-  fecha_creacion: string;
+  fecha?: string;
+  fecha_creacion?: string; // Alias para compatibilidad
   Tbl_Usuarios?: {
     id: number;
     username: string;
