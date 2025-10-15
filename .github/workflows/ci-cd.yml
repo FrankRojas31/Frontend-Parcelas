@@ -1,0 +1,86 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checar Repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Verificar tipos TypeScript
+        run: npx tsc --noEmit
+
+      - name: Ejecutar ESLint
+        run: npm run lint
+
+      - name: Construir proyecto
+        run: npm run build
+
+      - name: Subir artefactos del build
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: build-files
+          path: dist/
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Kubernetes on VPS
+    runs-on: ubuntu-latest
+    needs: ci
+    if: success()
+
+    steps:
+      - name: Deploy to VPS with Kubernetes
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          script: |
+            set -e  # Salir en caso de error
+
+            echo "🚀 Iniciando deploy..."
+            cd ${{ secrets.VPS_PROJECT_PATH }}
+
+            echo "📥 Obteniendo últimos cambios..."
+            git pull origin main
+
+            echo "🔨 Construyendo imagen Docker..."
+            # Construir con URL del backend
+            docker build -t parcela-frontend:${{ github.sha }} \
+              --build-arg VITE_API_BASE_URL=${{ secrets.BACKEND_API_URL }} .
+
+            echo "🏷️ Etiquetando imagen..."
+            docker tag parcela-frontend:${{ github.sha }} parcela-frontend:latest
+
+            echo "🔄 Actualizando deployment en Kubernetes..."
+            kubectl set image deployment/parcela-frontend-deployment \
+              parcela-frontend=parcela-frontend:${{ github.sha }} \
+              --namespace=${{ secrets.K8S_NAMESPACE }}
+
+            echo "⏳ Esperando rollout..."
+            kubectl rollout status deployment/parcela-frontend-deployment \
+              --namespace=${{ secrets.K8S_NAMESPACE }} \
+              --timeout=300s
+
+            echo "🧹 Limpiando imágenes no utilizadas..."
+            docker image prune -f
+
+            echo "✅ Deploy completado exitosamente!"
