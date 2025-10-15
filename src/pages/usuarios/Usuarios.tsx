@@ -3,149 +3,159 @@ import Card from "../../components/custom/Card.component";
 import CrudUsuarios from "../../components/custom/CrudUsuarios";
 import Modal from "../../components/custom/Modals";
 import { LayoutAdmin } from "../../layout/admin/Layout.component";
-
-interface Usuario {
-  id: number;
-  nombre: string;
-  correo: string;
-  parcelas: number;
-  rol: string;
-}
+import type { Usuario } from "../../types";
+import {
+  deleteUsuarioWithAlert,
+  createUsuarioWithAlert,
+  updateUsuarioWithAlert,
+} from "../../services/usuarios.service";
+import { createPersonaWithAlert, updatePersonaWithAlert } from "../../services/personas.service";
+import ModalUsuarioForm from "./components/ModalUsuarioForm";
 
 function Usuarios() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"add" | "edit" | "delete">("add");
+  const [modalType, setModalType] = useState<"add" | "edit">("add");
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null);
+  const [usuarioFormData, setUsuarioFormData] = useState<any>(null);
+  const [reloadTable, setReloadTable] = useState(false);
 
-  // Estados controlados para los campos del formulario
-  const [nombre, setNombre] = useState("");
-  const [correo, setCorreo] = useState("");
-  const [parcelas, setParcelas] = useState(0);
-  const [rol, setRol] = useState("Administrador");
-
-  // Cuando se abre el modal de editar, cargar los datos del usuario seleccionado
-  useEffect(() => {
-    if ((modalType === "edit" || modalType === "delete") && selectedUsuario) {
-      setNombre(selectedUsuario.nombre);
-      setCorreo(selectedUsuario.correo);
-      setParcelas(selectedUsuario.parcelas);
-      setRol(selectedUsuario.rol);
-    }
-    if (modalType === "add") {
-      setNombre("");
-      setCorreo("");
-      setParcelas(0);
-      setRol("Administrador");
-    }
-  }, [modalType, selectedUsuario]);
-
-  const openModal = (type: "add" | "edit" | "delete", usuario?: Usuario) => {
+  // Abre el modal con el tipo correspondiente
+  const openModal = (type: "add" | "edit", usuario?: Usuario) => {
     setModalType(type);
     setSelectedUsuario(usuario || null);
     setIsModalOpen(true);
   };
 
-  const handleConfirm = () => {
-    if (modalType === "add" || modalType === "edit") {
-      const usuarioData = {
-        id: selectedUsuario?.id || Date.now(),
-        nombre,
-        correo,
-        parcelas,
-        rol,
-      };
-      console.log(`${modalType} usuario:`, usuarioData);
-    } else {
-      console.log(`${modalType} usuario:`, selectedUsuario);
+  // Manejar eliminación con confirmación integrada
+  const handleDelete = async (usuario: Usuario) => {
+    const success = await deleteUsuarioWithAlert(usuario.id, usuario.username);
+    if (success) {
+      setReloadTable(true);
     }
-    setIsModalOpen(false);
   };
+
+  // Confirmar acciones (crear, editar)
+  const handleConfirm = async () => {
+    try {
+      if ((modalType === "add" || modalType === "edit") && usuarioFormData) {
+        if (modalType === "add") {
+          // Crear persona con alerta
+          const personaCreada = await createPersonaWithAlert({
+            nombre: usuarioFormData.persona.nombre,
+            apellido_paterno: usuarioFormData.persona.apellidoPaterno,
+            apellido_materno: usuarioFormData.persona.apellidoMaterno,
+            telefono: usuarioFormData.persona.telefono,
+            direccion: usuarioFormData.persona.direccion,
+            fecha_nacimiento: usuarioFormData.persona.fechaNacimiento,
+          });
+
+          if (personaCreada) {
+            // Crear usuario con alerta
+            const usuarioCreado = await createUsuarioWithAlert({
+              username: usuarioFormData.usuario.username,
+              email: usuarioFormData.usuario.email,
+              password: usuarioFormData.usuario.password!,
+              id_role: Number(usuarioFormData.usuario.rol),
+              id_persona: personaCreada.id!,
+            });
+
+            if (usuarioCreado) {
+              setReloadTable(true);
+              setIsModalOpen(false);
+              setUsuarioFormData(null);
+            }
+          }
+        } else if (modalType === "edit" && selectedUsuario) {
+          // Actualizar persona con alerta
+          const personaActualizada = await updatePersonaWithAlert(
+            selectedUsuario.id_persona,
+            {
+              nombre: usuarioFormData.persona.nombre,
+              apellido_paterno: usuarioFormData.persona.apellidoPaterno,
+              apellido_materno: usuarioFormData.persona.apellidoMaterno,
+              telefono: usuarioFormData.persona.telefono,
+              direccion: usuarioFormData.persona.direccion,
+              fecha_nacimiento: usuarioFormData.persona.fechaNacimiento,
+            },
+            `${usuarioFormData.persona.nombre} ${usuarioFormData.persona.apellidoPaterno}`
+          );
+
+          if (personaActualizada) {
+            // Actualizar usuario con alerta
+            const usuarioActualizado = await updateUsuarioWithAlert(
+              selectedUsuario.id,
+              {
+                username: usuarioFormData.usuario.username,
+                email: usuarioFormData.usuario.email,
+                password: usuarioFormData.usuario.password!,
+                id_role: Number(usuarioFormData.usuario.rol),
+              },
+              usuarioFormData.usuario.username
+            );
+
+            if (usuarioActualizado) {
+              setReloadTable(true);
+              setIsModalOpen(false);
+              setUsuarioFormData(null);
+              setSelectedUsuario(null);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error al procesar la acción:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (reloadTable) {
+      setReloadTable(false);
+    }
+  }, [reloadTable]);
 
   return (
     <LayoutAdmin title="Gestión de Usuarios">
       <Card title="Usuarios" type="add" onButtonClick={() => openModal("add")}>
         <CrudUsuarios
           onEdit={(usuario: Usuario) => openModal("edit", usuario)}
-          onDelete={(usuario: Usuario) => openModal("delete", usuario)}
+          onDelete={handleDelete}
+          reload={reloadTable}
         />
       </Card>
+
       <Modal
         type={modalType}
-        title={
-          modalType === "add"
-            ? "Agregar Usuario"
-            : modalType === "edit"
-            ? "Editar Usuario"
-            : "Confirmar Eliminación"
-        }
-        description={
-          modalType === "delete" && selectedUsuario
-            ? `¿Estás seguro de que deseas eliminar el usuario "${selectedUsuario.nombre}"?`
-            : undefined
-        }
+        title={modalType === "add" ? "Agregar Usuario" : "Editar Usuario"}
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onButtonClick={handleConfirm}
       >
-        {modalType === "add" || modalType === "edit" ? (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Nombre
-              </label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-                placeholder="Nombre completo"
-                value={nombre}
-                onChange={e => setNombre(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Correo
-              </label>
-              <input
-                type="email"
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-                placeholder="Correo electrónico"
-                value={correo}
-                onChange={e => setCorreo(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Parcelas
-              </label>
-              <input
-                type="number"
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-                placeholder="Cantidad de parcelas"
-                value={parcelas}
-                onChange={e => setParcelas(Number(e.target.value))}
-                min={0}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Rol
-              </label>
-              <select
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-                value={rol}
-                onChange={e => setRol(e.target.value)}
-              >
-                <option value="Administrador">Administrador</option>
-                <option value="Usuario">Usuario</option>
-                <option value="Supervisor">Supervisor</option>
-              </select>
-            </div>
-          </div>
-        ) : (
-          <div className="text-sm text-gray-600">
-            Esta acción no se puede deshacer.
-          </div>
-        )}
+        <ModalUsuarioForm
+          mode={modalType}
+          initialData={
+            modalType === "edit" && selectedUsuario
+              ? {
+                  persona: {
+                    nombre: selectedUsuario?.Tbl_Persona?.nombre || "",
+                    apellidoPaterno:
+                      selectedUsuario?.Tbl_Persona?.apellido_paterno || "",
+                    apellidoMaterno:
+                      selectedUsuario?.Tbl_Persona?.apellido_materno || "",
+                    telefono: selectedUsuario?.Tbl_Persona?.telefono || "",
+                    fechaNacimiento:
+                      selectedUsuario?.Tbl_Persona?.fecha_nacimiento || "",
+                    direccion: selectedUsuario?.Tbl_Persona?.direccion || "",
+                  },
+                  usuario: {
+                    username: selectedUsuario?.username || "",
+                    email: selectedUsuario?.email || "",
+                    rol: selectedUsuario?.Tbl_Roles?.nombre || "",
+                  },
+                }
+              : undefined
+          }
+          onChange={(data) => setUsuarioFormData(data)}
+        />
       </Modal>
     </LayoutAdmin>
   );

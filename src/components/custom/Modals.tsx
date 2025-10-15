@@ -50,6 +50,9 @@ export default function Modal({
         return "destructive" as const;
       case "view":
         return "outline" as const;
+      case "add":
+      case "edit":
+        return "default" as const;
       default:
         return "default" as const;
     }
@@ -59,30 +62,33 @@ export default function Modal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose?.()}>
-      <DialogContent className={className}>
-        <DialogHeader onClose={onClose}>
+      <DialogContent className={`sm:max-w-[500px] ${className}`}>
+        <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          {description && (
-            <DialogDescription>{description}</DialogDescription>
-          )}
+          {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        
-        <div className="px-6 py-3">
-          {children}
-        </div>
-        
+
+        <div className="px-6 py-4">{children}</div>
+
         <DialogFooter>
-          {shouldShowCancelButton && (
-            <Button variant="outline" onClick={onClose}>
-              Cancelar
+          <div className="flex gap-3 w-full">
+            {shouldShowCancelButton && (
+              <Button variant="outline" onClick={onClose} className="flex-1 bg-white/20 hover:bg-white/30 text-white">
+                Cancelar
+              </Button>
+            )}
+            <Button
+              variant={getButtonVariant()}
+              onClick={onButtonClick}
+              className={`flex-1 ${
+                type === "add" || type === "edit"
+                  ? "bg-green-600/80 hover:bg-green-700/80 text-white border"
+                  : ""
+              }`}
+            >
+              {getButtonText()}
             </Button>
-          )}
-          <Button 
-            variant={getButtonVariant()} 
-            onClick={onButtonClick}
-          >
-            {getButtonText()}
-          </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
