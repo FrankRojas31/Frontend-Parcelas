@@ -6,6 +6,7 @@ import { getSensorStats } from "../../services/sensors.service";
 import { LayoutAdmin } from "../../layout/admin/Layout.component";
 import Card from "../../components/custom/Card.component";
 import { FiSun, FiTrendingUp, FiActivity } from "react-icons/fi";
+import { buildApiUrl, API_CONFIG } from "../../config/api.config";
 
 
 function Dashboard() {
@@ -72,7 +73,7 @@ function Dashboard() {
           <div className="lg:col-span-2">
             <MapCard
               title="Mapa de parcelas vigentes"
-              apiEndpoint="http://localhost:3000/api/parcelas-mongo/"
+              apiEndpoint={buildApiUrl(API_CONFIG.ENDPOINTS.PARCELAS_MONGO, '/')}
             />
           </div>
 

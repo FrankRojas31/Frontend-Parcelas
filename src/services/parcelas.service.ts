@@ -2,7 +2,7 @@ import { buildApiUrl, API_CONFIG } from '../config/api.config';
 import type { Parcela, ApiResponse } from '../types';
 import { SweetAlert } from '../components/custom/SweetAlert';
 
-const API_BASE_URL = buildApiUrl(API_CONFIG.ENDPOINTS.PARCELAS);
+const API_BASE_URL = buildApiUrl(API_CONFIG.ENDPOINTS.PARCELAS_SQL);
 
 export const getAllParcelas = async (): Promise<Parcela[]> => {
   try {

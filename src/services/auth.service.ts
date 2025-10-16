@@ -58,7 +58,7 @@ export interface ApiErrorResponse {
  */
 export const loginUser = async (credentials: LoginRequest): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}/api/login/login`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.LOGIN}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ export const loginUser = async (credentials: LoginRequest): Promise<AuthResponse
  */
 export const registerUser = async (userData: RegisterRequest): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}/api/register/register`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REGISTER}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ export const registerUser = async (userData: RegisterRequest): Promise<AuthRespo
  */
 export const verifyToken = async (token: string): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}/api/verify-token`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.VERIFY_TOKEN}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -136,7 +136,7 @@ export const verifyToken = async (token: string): Promise<AuthResponse> => {
  */
 export const logoutUser = async (token: string): Promise<void> => {
   try {
-    await fetch(`${API_CONFIG.BASE_URL}/api/logout`, {
+    await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.LOGOUT}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

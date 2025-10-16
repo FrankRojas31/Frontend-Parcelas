@@ -14,6 +14,7 @@ import {
 import { getAllUsuarios } from "../../services/usuarios.service";
 import { SweetAlert } from "../../components/custom/SweetAlert";
 import type { Usuario } from "../../types";
+import { buildApiUrl, API_CONFIG } from "../../config/api.config";
 
 function Parcelas() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,7 +63,7 @@ function Parcelas() {
         console.warn("No se pudieron obtener parcelas con responsables, usando endpoint básico:", responsableError);
         
         // Fallback: usar endpoint básico y transformar los datos
-        const response = await fetch('http://localhost:3000/api/parcelas/');
+        const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.PARCELAS, '/'));
         if (!response.ok) {
           throw new Error(`Error HTTP: ${response.status}`);
         }
