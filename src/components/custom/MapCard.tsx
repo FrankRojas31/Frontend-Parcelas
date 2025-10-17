@@ -3,7 +3,7 @@ import Card from "../custom/Card.component";
 import { useState, useEffect, useCallback } from "react";
 import type { ApiResponse } from "../../types";
 
-// Nueva estructura de datos agrupados
+// Estructura simple de datos del sensor
 interface SensorData {
   value: number;
   unit: string;
@@ -15,72 +15,37 @@ interface SensorData {
   type: string;
 }
 
-interface GroupedSensorData {
-  coords: {
-    lat: number;
-    lon: number;
-  };
-  sensores: {
-    temperatura?: SensorData[];
-    humedad?: SensorData[];
-    lluvia?: SensorData[];
-    radiacion_solar?: SensorData[];
-  };
-  timestamp: string;
-  isDeleted: boolean;
-}
-
 interface MapCardProps {
   title: string;
   apiEndpoint?: string; // URL del endpoint a consumir
 }
 
-// Datos estáticos como fallback (usando nueva estructura)
-const DEFAULT_PARCELAS: GroupedSensorData[] = [
+// Datos estáticos como fallback
+const DEFAULT_PARCELAS: SensorData[] = [
   {
-    coords: { lat: 9.934739, lon: -84.087502 },
-    sensores: {
-      temperatura: [
-        {
-          value: 25.5,
-          unit: "°C",
-          timestamp: new Date().toISOString(),
-          coords: { lat: 9.934739, lon: -84.087502 },
-          type: "temperatura",
-        },
-      ],
-    },
+    value: 25.5,
+    unit: "°C",
     timestamp: new Date().toISOString(),
-    isDeleted: false,
+    coords: { lat: 9.934739, lon: -84.087502 },
+    type: "temperatura",
   },
   {
-    coords: { lat: 9.928739, lon: -84.081502 },
-    sensores: {
-      temperatura: [
-        {
-          value: 23.2,
-          unit: "°C",
-          timestamp: new Date().toISOString(),
-          coords: { lat: 9.928739, lon: -84.081502 },
-          type: "temperatura",
-        },
-      ],
-      humedad: [
-        {
-          value: 68.5,
-          unit: "%",
-          timestamp: new Date().toISOString(),
-          coords: { lat: 9.928739, lon: -84.081502 },
-          type: "humedad",
-        },
-      ],
-    },
+    value: 23.2,
+    unit: "°C",
     timestamp: new Date().toISOString(),
-    isDeleted: false,
+    coords: { lat: 9.928739, lon: -84.081502 },
+    type: "temperatura",
+  },
+  {
+    value: 68.5,
+    unit: "%",
+    timestamp: new Date().toISOString(),
+    coords: { lat: 9.928739, lon: -84.081502 },
+    type: "humedad",
   },
 ];
 export default function MapCard({ ...props }: MapCardProps) {
-  const [parcelas, setParcelas] = useState<GroupedSensorData[]>([]);
+  const [parcelas, setParcelas] = useState<SensorData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,7 +68,7 @@ export default function MapCard({ ...props }: MapCardProps) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
-      const data: ApiResponse<GroupedSensorData[]> = await response.json();
+      const data: ApiResponse<SensorData[]> = await response.json();
 
       console.log(data.data);
 
@@ -163,16 +128,7 @@ export default function MapCard({ ...props }: MapCardProps) {
           <LeafletMap
             center={mapCenter}
             zoom={mapZoom}
-            parcelas={
-              parcelas as unknown as Array<{
-                lat: number;
-                lng: number;
-                id: string;
-                name: string;
-                area?: string;
-                status?: string;
-              }>
-            }
+            parcelas={parcelas}
             height="h-[500px]"
           />
         )}

@@ -21,6 +21,15 @@ export interface ParcelaSQL {
   };
 }
 
+// Tipo base para un sensor individual
+interface SensorReading {
+  value: number;
+  unit: string;
+  timestamp: string;
+  coords: { lat: number; lon: number };
+  type: string;
+}
+
 export interface ParcelaWithResponsable {
   _id: string;
   coords: {
@@ -28,13 +37,11 @@ export interface ParcelaWithResponsable {
     lon: number;
   };
   sensores: {
-    temperatura: Array<{
-      value: number;
-      unit: string;
-      timestamp: string;
-      coords: { lat: number; lon: number };
-      type: string;
-    }>;
+    temperatura?: SensorReading[];
+    humedad?: SensorReading[];
+    lluvia?: SensorReading[];
+    radiacion_solar?: SensorReading[];
+    [key: string]: SensorReading[] | undefined;
   };
   timestamp: string;
   isDeleted: boolean;

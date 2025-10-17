@@ -8,7 +8,6 @@ import Card from "../../components/custom/Card.component";
 import { FiSun, FiTrendingUp, FiActivity } from "react-icons/fi";
 import { buildApiUrl, API_CONFIG } from "../../config/api.config";
 
-
 function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(true);
@@ -73,7 +72,7 @@ function Dashboard() {
           <div className="lg:col-span-2">
             <MapCard
               title="Mapa de parcelas vigentes"
-              apiEndpoint={buildApiUrl(API_CONFIG.ENDPOINTS.PARCELAS_MONGO, '/')}
+              apiEndpoint={buildApiUrl(API_CONFIG.ENDPOINTS.SENSORES, "/")}
             />
           </div>
 

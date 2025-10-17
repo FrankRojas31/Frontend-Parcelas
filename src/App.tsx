@@ -7,6 +7,7 @@ import Usuarios from "./pages/usuarios/Usuarios";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 function App() {
+  console.log("Aqui esta la cadena " + import.meta.env.VITE_API_BASE_URL);
   return (
     <Routes>
       {/* Rutas protegidas - requieren autenticación */}

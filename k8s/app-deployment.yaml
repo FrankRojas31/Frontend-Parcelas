@@ -1,0 +1,134 @@
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: parcela-frontend-deployment
+  labels:
+    app: parcela-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: parcela-frontend
+  template:
+    metadata:
+      labels:
+        app: parcela-frontend
+    spec:
+      containers:
+        - name: parcela-frontend
+          image: emmow/parcela-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+# Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: parcela-frontend-service
+spec:
+  selector:
+    app: parcela-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+---
+# Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: parcela-backend-deployment
+  labels:
+    app: parcela-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: parcela-backend
+  template:
+    metadata:
+      labels:
+        app: parcela-backend
+    spec:
+      containers:
+        - name: parcela-backend
+          image: emmow/parcela-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+---
+# Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: parcela-backend-service
+spec:
+  selector:
+    app: parcela-backend
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP
+---
+# Combined Ingress for Frontend + Backend
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: parcela-app-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/rule-type: "PathPrefixStrip"
+    # traefik.ingress.kubernetes.io/router.tls.certresolver: "letsencrypt"
+spec:
+  rules:
+    - host: www.leadscrm.store
+      http:
+        paths:
+          # Backend API routes
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: parcela-backend-service
+                port:
+                  number: 3000
+          # Frontend routes (catch-all)
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: parcela-frontend-service
+                port:
+                  number: 80

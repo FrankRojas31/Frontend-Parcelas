@@ -9,7 +9,7 @@ import {
   createOrUpdateParcelaSQL,
   updateParcelaSQL,
   removeResponsableFromParcela,
-  type ParcelaWithResponsable
+  type ParcelaWithResponsable,
 } from "../../services/parcelas-sql.service";
 import { getAllUsuarios } from "../../services/usuarios.service";
 import { SweetAlert } from "../../components/custom/SweetAlert";
@@ -19,7 +19,8 @@ import { buildApiUrl, API_CONFIG } from "../../config/api.config";
 function Parcelas() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
-  const [selectedParcela, setSelectedParcela] = useState<ParcelaWithResponsable | null>(null);
+  const [selectedParcela, setSelectedParcela] =
+    useState<ParcelaWithResponsable | null>(null);
   const [parcelas, setParcelas] = useState<ParcelaWithResponsable[]>([]); // Para el mapa
   const [parcelasTabla, setParcelasTabla] = useState<any[]>([]); // Para la tabla (solo SQL)
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -32,13 +33,42 @@ function Parcelas() {
   const nombreRef = useRef<HTMLInputElement>(null);
   const usuarioRef = useRef<HTMLSelectElement>(null);
 
+  // Función para extraer coordenadas del ID (formato: lat_lon)
+  const parseCoordinatesFromId = (id: string): { lat: number; lon: number } => {
+    try {
+      if (id && typeof id === "string" && id.includes("_")) {
+        const parts = id.split("_");
+        if (parts.length >= 2) {
+          const lat = parseFloat(parts[0]);
+          const lon = parseFloat(parts[1]);
+
+          if (!isNaN(lat) && !isNaN(lon)) {
+            console.log(`📍 Coordenadas extraídas del ID "${id}":`, {
+              lat,
+              lon,
+            });
+            return { lat, lon };
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("❌ Error al parsear coordenadas del ID:", id, error);
+    }
+
+    // Coordenadas por defecto si no se puede parsear
+    console.log(`⚠️ Usando coordenadas por defecto para ID: ${id}`);
+    return { lat: 9.934739, lon: -84.087502 };
+  };
+
   const getMapCenter = (): [number, number] => {
     if (parcelas.length > 0) {
-      const avgLat = parcelas.reduce((sum, p) => sum + p.coords.lat, 0) / parcelas.length;
-      const avgLng = parcelas.reduce((sum, p) => sum + p.coords.lon, 0) / parcelas.length;
+      const avgLat =
+        parcelas.reduce((sum, p) => sum + p.coords.lat, 0) / parcelas.length;
+      const avgLng =
+        parcelas.reduce((sum, p) => sum + p.coords.lon, 0) / parcelas.length;
       return [avgLat, avgLng];
     }
-    return [9.934739, -84.087502]; 
+    return [9.934739, -84.087502];
   };
 
   const mapCenter: [number, number] = getMapCenter();
@@ -54,41 +84,74 @@ function Parcelas() {
     try {
       setLoading(true);
       setError(null);
-      
+
       try {
         // Intentar obtener parcelas con responsables
         const data = await getParcelasWithResponsables();
         setParcelas(data);
       } catch (responsableError) {
-        console.warn("No se pudieron obtener parcelas con responsables, usando endpoint básico:", responsableError);
-        
+        console.warn(
+          "No se pudieron obtener parcelas con responsables, usando endpoint básico:",
+          responsableError
+        );
+
         // Fallback: usar endpoint básico y transformar los datos
-        const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.PARCELAS, '/'));
+        const response = await fetch(
+          buildApiUrl(API_CONFIG.ENDPOINTS.PARCELAS, "/")
+        );
         if (!response.ok) {
           throw new Error(`Error HTTP: ${response.status}`);
         }
-        
+
         const result = await response.json();
         if (result.data && Array.isArray(result.data)) {
-          const transformedData = result.data.map((parcela: any) => ({
-            _id: parcela._id || parcela.id,
-            coords: parcela.coords || { lat: 0, lon: 0 },
-            sensores: parcela.sensores || {
-              temperatura: [{
-                value: parcela.value || 0,
-                unit: parcela.unit || "°C",
-                timestamp: parcela.timestamp || new Date().toISOString(),
-                coords: parcela.coords || { lat: 0, lon: 0 },
-                type: "temperatura"
-              }]
-            },
-            timestamp: parcela.timestamp || new Date().toISOString(),
-            isDeleted: parcela.isDeleted || false,
-            sqlData: null,
-            hasResponsable: false,
-            responsable: null,
-            nombre: null
-          }));
+          const transformedData = result.data.map((parcela: unknown) => {
+            const parcelaData = parcela as {
+              _id?: string;
+              id?: string;
+              coords?: { lat: number; lon: number };
+              [key: string]: unknown;
+            };
+            const parcelaId = parcelaData._id || parcelaData.id || "";
+
+            // Extraer coordenadas del ID si no hay coords directas
+            let coords = parcelaData.coords || { lat: 0, lon: 0 };
+            if (
+              (!parcelaData.coords ||
+                (parcelaData.coords.lat === 0 &&
+                  parcelaData.coords.lon === 0)) &&
+              parcelaId
+            ) {
+              coords = parseCoordinatesFromId(String(parcelaId));
+            }
+
+            return {
+              _id: parcelaId,
+              coords,
+              sensores: (parcelaData as { sensores?: unknown }).sensores || {
+                temperatura: [
+                  {
+                    value: (parcelaData as { value?: number }).value || 0,
+                    unit: (parcelaData as { unit?: string }).unit || "°C",
+                    timestamp:
+                      (parcelaData as { timestamp?: string }).timestamp ||
+                      new Date().toISOString(),
+                    coords: coords,
+                    type: "temperatura",
+                  },
+                ],
+              },
+              timestamp:
+                (parcelaData as { timestamp?: string }).timestamp ||
+                new Date().toISOString(),
+              isDeleted:
+                (parcelaData as { isDeleted?: boolean }).isDeleted || false,
+              sqlData: null,
+              hasResponsable: false,
+              responsable: null,
+              nombre: null,
+            };
+          });
           setParcelas(transformedData);
         } else {
           setParcelas([]);
@@ -96,7 +159,9 @@ function Parcelas() {
       }
     } catch (err) {
       console.error("Error al cargar parcelas:", err);
-      setError("Error al cargar las parcelas. Verifica que el servidor esté corriendo.");
+      setError(
+        "Error al cargar las parcelas. Verifica que el servidor esté corriendo."
+      );
       setParcelas([]);
     } finally {
       setLoading(false);
@@ -122,11 +187,16 @@ function Parcelas() {
       const usuariosFiltrados = data.filter((u) => !u.borrado);
       setUsuarios(usuariosFiltrados);
     } catch (err) {
-      setError("Error al cargar usuarios. Verifica que el servidor esté corriendo.");
+      setError(
+        "Error al cargar usuarios. Verifica que el servidor esté corriendo."
+      );
     }
   };
 
-  const openModal = (type: "add" | "edit", parcela?: ParcelaWithResponsable) => {
+  const openModal = (
+    type: "add" | "edit",
+    parcela?: ParcelaWithResponsable
+  ) => {
     setModalType(type);
     setSelectedParcela(parcela || null);
     setIsModalOpen(true);
@@ -135,32 +205,37 @@ function Parcelas() {
   // Manejar eliminación con confirmación integrada
   const handleDeleteResponsable = async (parcela: ParcelaWithResponsable) => {
     if (!parcela.sqlData || operationLoading) return;
-    
+
     const result = await SweetAlert.confirm({
-      title: '¿Eliminar responsable?',
-      text: `Se eliminará el responsable de la parcela "${parcela.nombre || 'Sin nombre'}".`,
-      icon: 'warning',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
+      title: "¿Eliminar responsable?",
+      text: `Se eliminará el responsable de la parcela "${
+        parcela.nombre || "Sin nombre"
+      }".`,
+      icon: "warning",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
       showCancelButton: true,
     });
-    
+
     if (result.isConfirmed) {
       try {
         setOperationLoading(true);
 
         await removeResponsableFromParcela(parcela.sqlData.id);
-        
+
         await SweetAlert.success({
-          title: '¡Eliminado!',
-          text: 'El responsable ha sido eliminado exitosamente.',
+          title: "¡Eliminado!",
+          text: "El responsable ha sido eliminado exitosamente.",
           timer: 2000,
         });
-        
+
         await fetchParcelas();
         await fetchParcelasTabla();
       } catch (error) {
-        await SweetAlert.errorOperation('eliminar el responsable', error instanceof Error ? error.message : 'Error desconocido');
+        await SweetAlert.errorOperation(
+          "eliminar el responsable",
+          error instanceof Error ? error.message : "Error desconocido"
+        );
       } finally {
         setOperationLoading(false);
       }
@@ -169,7 +244,7 @@ function Parcelas() {
 
   const handleConfirm = async () => {
     if (operationLoading) return;
-    
+
     try {
       if (modalType === "add" && selectedParcela) {
         // Asignar responsable a parcela existente de MongoDB
@@ -178,8 +253,8 @@ function Parcelas() {
 
         if (!nombre || !id_usuario) {
           await SweetAlert.warning({
-            title: 'Campos requeridos',
-            text: 'Nombre y responsable son requeridos',
+            title: "Campos requeridos",
+            text: "Nombre y responsable son requeridos",
           });
           return;
         }
@@ -188,26 +263,35 @@ function Parcelas() {
         setIsModalOpen(false);
         setOperationLoading(true);
 
+        // Nota: Las coordenadas se extraerán del parcelaMg_Id en el backend
+        // El ID contiene las coordenadas en formato "lat_lon"
         await createOrUpdateParcelaSQL({
           parcelaMg_Id: selectedParcela._id,
           nombre,
           id_usuario,
         });
 
-        await SweetAlert.successAssign(`la parcela "${nombre}"`, 'el responsable seleccionado');
-        
+        await SweetAlert.successAssign(
+          `la parcela "${nombre}"`,
+          "el responsable seleccionado"
+        );
+
         await fetchParcelas();
         await fetchParcelasTabla();
         return;
-        
       } else if (modalType === "edit" && selectedParcela) {
-        const nombre = nombreRef.current?.value?.trim() || selectedParcela.nombre || "";
-        const id_usuario = parseInt(usuarioRef.current?.value || (selectedParcela.responsable?.id.toString() || "0"));
+        const nombre =
+          nombreRef.current?.value?.trim() || selectedParcela.nombre || "";
+        const id_usuario = parseInt(
+          usuarioRef.current?.value ||
+            selectedParcela.responsable?.id.toString() ||
+            "0"
+        );
 
         if (!nombre) {
           await SweetAlert.warning({
-            title: 'Campo requerido',
-            text: 'El nombre es requerido',
+            title: "Campo requerido",
+            text: "El nombre es requerido",
           });
           return;
         }
@@ -224,6 +308,7 @@ function Parcelas() {
           });
         } else {
           // Crear nueva asociación SQL
+          // Nota: Las coordenadas se extraerán del parcelaMg_Id en el backend
           await createOrUpdateParcelaSQL({
             parcelaMg_Id: selectedParcela._id,
             nombre,
@@ -232,7 +317,7 @@ function Parcelas() {
         }
 
         await SweetAlert.successUpdate(`La parcela "${nombre}"`);
-        
+
         await fetchParcelas();
         await fetchParcelasTabla();
         return;
@@ -240,7 +325,9 @@ function Parcelas() {
     } catch (err: any) {
       console.error("Error en la operación:", err);
       await SweetAlert.errorOperation(
-        modalType === "add" ? "asignar el responsable" : "actualizar la parcela", 
+        modalType === "add"
+          ? "asignar el responsable"
+          : "actualizar la parcela",
         err.message || "Ocurrió un error al procesar la solicitud"
       );
     } finally {
@@ -251,17 +338,24 @@ function Parcelas() {
   // Filtrar parcelas de la tabla según el término de búsqueda
   const getFilteredParcelasTabla = () => {
     let filtered = parcelasTabla;
-    
+
     // Filtrar por término de búsqueda
     if (searchTerm.trim()) {
-      filtered = filtered.filter(p => 
-        (p.nombre?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (p.responsable?.username?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (p.responsable?.persona?.nombre?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (p.responsable?.persona?.apellido_paterno?.toLowerCase().includes(searchTerm.toLowerCase()))
+      filtered = filtered.filter(
+        (p) =>
+          p.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.responsable?.username
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          p.responsable?.persona?.nombre
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          p.responsable?.persona?.apellido_paterno
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase())
       );
     }
-    
+
     return filtered;
   };
 
@@ -285,7 +379,7 @@ function Parcelas() {
               Cargando datos...
             </div>
           )}
-          
+
           <div className="mb-3 text-sm text-white">
             Total de parcelas: <strong>{parcelas.length}</strong>
           </div>
@@ -295,50 +389,86 @@ function Parcelas() {
               {parcelas.length === 0 && !loading ? (
                 <div className="text-center py-8 text-gray-500">
                   <p className="mb-2">No hay parcelas registradas</p>
-                  <p className="text-sm">Haz clic en el botón "+" para agregar una nueva parcela</p>
+                  <p className="text-sm">
+                    Haz clic en el botón "+" para agregar una nueva parcela
+                  </p>
                 </div>
               ) : (
                 <LeafletMap
                   center={mapCenter}
                   zoom={mapZoom}
-                  parcelas={parcelas.map(p => {
-                    // Detectar qué tipo de sensor tiene la parcela
-                    const sensorTypes = ['temperatura', 'humedad', 'lluvia', 'radiacion_solar'];
-                    const availableSensor = sensorTypes.find(type => 
-                      p.sensores?.[type as keyof typeof p.sensores]?.[0]
+                  parcelas={parcelas.flatMap((p) => {
+                    // Extraer todos los sensores y aplanarlos en un array simple
+                    const sensors: Array<{
+                      value: number;
+                      unit: string;
+                      timestamp: string;
+                      coords: { lat: number; lon: number };
+                      type: string;
+                      _id?: string;
+                      parcelaId: string;
+                      nombre?: string | null;
+                      hasResponsable?: boolean;
+                      responsable?: any;
+                    }> = [];
+
+                    // Iterar sobre todos los tipos de sensores disponibles
+                    Object.entries(p.sensores).forEach(
+                      ([sensorType, readings]) => {
+                        if (readings && Array.isArray(readings)) {
+                          readings.forEach((reading) => {
+                            sensors.push({
+                              value: reading.value,
+                              unit: reading.unit,
+                              timestamp: reading.timestamp,
+                              coords: reading.coords || p.coords,
+                              type: reading.type || sensorType,
+                              parcelaId: p._id,
+                              nombre: p.nombre,
+                              hasResponsable: p.hasResponsable,
+                              responsable: p.responsable,
+                            });
+                          });
+                        }
+                      }
                     );
-                    
-                    const sensorData = availableSensor 
-                      ? p.sensores[availableSensor as keyof typeof p.sensores]?.[0]
-                      : null;
-                    
-                    return {
-                      coords: p.coords,
-                      sensores: p.sensores,
-                      timestamp: p.timestamp,
-                      isDeleted: p.isDeleted,
-                      // Agregar propiedades faltantes para el tipo
-                      value: sensorData?.value || 0,
-                      unit: sensorData?.unit || "°C",
-                      // Metadata adicional para las acciones
-                      _id: p._id,
-                      responsable: p.responsable,
-                      nombre: p.nombre,
-                      hasResponsable: p.hasResponsable
-                    };
+
+                    // Si no hay sensores, crear uno por defecto
+                    if (sensors.length === 0) {
+                      sensors.push({
+                        value: 0,
+                        unit: "°C",
+                        timestamp: p.timestamp,
+                        coords: p.coords,
+                        type: "temperatura",
+                        parcelaId: p._id,
+                        nombre: p.nombre,
+                        hasResponsable: p.hasResponsable,
+                        responsable: p.responsable,
+                      });
+                    }
+
+                    return sensors;
                   })}
                   height="h-[500px]"
                   showActions={true}
-                  onEditParcela={(parcela: any) => {
-                    const originalParcela = parcelas.find(p => p._id === parcela._id);
+                  onEditParcela={(sensor: any) => {
+                    const originalParcela = parcelas.find(
+                      (p) => p._id === sensor.parcelaId
+                    );
                     if (originalParcela) openModal("edit", originalParcela);
                   }}
-                  onDeleteParcela={(parcela: any) => {
-                    const originalParcela = parcelas.find(p => p._id === parcela._id);
-                    if (originalParcela) handleDeleteResponsable(originalParcela);
+                  onDeleteParcela={(sensor: any) => {
+                    const originalParcela = parcelas.find(
+                      (p) => p._id === sensor.parcelaId
+                    );
+                    if (originalParcela)
+                      handleDeleteResponsable(originalParcela);
                   }}
-                  onAddResponsable={(parcela: any) => {
-                    const originalParcela = parcelas.find(p => p._id === parcela._id);
+                  onAddResponsable={(sensor: any) => {
+                    const originalParcela = parcelas.find(
+                      (p) => p._id === sensor.parcelaId
+                    );
                     if (originalParcela) openModal("add", originalParcela);
                   }}
                 />
@@ -347,13 +477,21 @@ function Parcelas() {
           </Card>
 
           {/* Tabla de Parcelas con Responsables */}
-          <Card title="Gestión de Responsables" className="w-full mt-4" secondary>
+          <Card
+            title="Gestión de Responsables"
+            className="w-full mt-4"
+            secondary
+          >
             <div className="p-4">
               <div className="mb-4 flex justify-between items-center">
                 <div className="text-sm text-white">
                   <div>
-                    Mostrando: <strong>{filteredParcelasTabla.length}</strong> parcelas con responsables
-                    <span> | Total en SQL: <strong>{parcelasTabla.length}</strong></span>
+                    Mostrando: <strong>{filteredParcelasTabla.length}</strong>{" "}
+                    parcelas con responsables
+                    <span>
+                      {" "}
+                      | Total en SQL: <strong>{parcelasTabla.length}</strong>
+                    </span>
                   </div>
                   {lastUpdate && (
                     <div className="text-xs text-white/70 mt-1">
@@ -363,7 +501,9 @@ function Parcelas() {
                 </div>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
-                    <label className="text-sm font-medium text-white">Buscar:</label>
+                    <label className="text-sm font-medium text-white">
+                      Buscar:
+                    </label>
                     <input
                       type="text"
                       value={searchTerm}
@@ -385,29 +525,49 @@ function Parcelas() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="overflow-x-auto rounded-xl">
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs text-black uppercase bg-white/40 ">
                     <tr>
-                      <th scope="col" className="px-6 py-3 font-bold">Coordenadas</th>
-                      <th scope="col" className="px-6 py-3 font-bold">Nombre</th>
-                      <th scope="col" className="px-6 py-3 font-bold">Responsable</th>
-                      <th scope="col" className="px-6 py-3 font-bold">Tipo</th>
-                      <th scope="col" className="px-6 py-3 font-bold">Estado</th>
-                      <th scope="col" className="px-6 py-3 font-bold">Acciones</th>
+                      <th scope="col" className="px-6 py-3 font-bold">
+                        Coordenadas
+                      </th>
+                      <th scope="col" className="px-6 py-3 font-bold">
+                        Nombre
+                      </th>
+                      <th scope="col" className="px-6 py-3 font-bold">
+                        Responsable
+                      </th>
+                      <th scope="col" className="px-6 py-3 font-bold">
+                        Tipo
+                      </th>
+                      <th scope="col" className="px-6 py-3 font-bold">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-6 py-3 font-bold">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredParcelasTabla.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 text-center text-black/70">
-                          {parcelasTabla.length === 0 ? "No hay parcelas con responsables asignados" : "No hay parcelas que coincidan con la búsqueda"}
+                        <td
+                          colSpan={6}
+                          className="px-6 py-4 text-center text-black/70"
+                        >
+                          {parcelasTabla.length === 0
+                            ? "No hay parcelas con responsables asignados"
+                            : "No hay parcelas que coincidan con la búsqueda"}
                         </td>
                       </tr>
                     ) : (
                       filteredParcelasTabla.map((parcela: any) => (
-                        <tr key={parcela.id} className="bg-white/10 border-b border-white/20 hover:bg-white/20 backdrop-blur-sm">
+                        <tr
+                          key={parcela.id}
+                          className="bg-white/10 border-b border-white/20 hover:bg-white/20 backdrop-blur-sm"
+                        >
                           <td className="px-6 py-4 font-medium text-white">
                             {parcela.coords ? (
                               <div className="text-xs">
@@ -416,16 +576,22 @@ function Parcelas() {
                               </div>
                             ) : (
                               <div className="text-xs text-red-500">
-                                <div>MongoDB ID:</div>
-                                <div className="font-mono">{parcela.parcelaMg_Id}</div>
+                                <div>Sin coordenadas</div>
+                                <div className="font-mono text-[10px]">
+                                  {parcela.parcelaMg_Id}
+                                </div>
                               </div>
                             )}
                           </td>
                           <td className="px-6 py-4">
                             {parcela.nombre ? (
-                              <span className="font-medium text-black">{parcela.nombre}</span>
+                              <span className="font-medium text-black">
+                                {parcela.nombre}
+                              </span>
                             ) : (
-                              <span className="text-white/60 italic">Sin nombre</span>
+                              <span className="text-white/60 italic">
+                                Sin nombre
+                              </span>
                             )}
                           </td>
                           <td className="px-6 py-4">
@@ -435,54 +601,62 @@ function Parcelas() {
                                   {parcela.responsable.username}
                                 </div>
                                 <div className="text-xs text-black/70">
-                                  {parcela.responsable.persona?.nombre} {parcela.responsable.persona?.apellido_paterno}
+                                  {parcela.responsable.persona?.nombre}{" "}
+                                  {
+                                    parcela.responsable.persona
+                                      ?.apellido_paterno
+                                  }
                                 </div>
                               </div>
                             ) : (
-                              <span className="text-black/60 italic">Sin responsable</span>
+                              <span className="text-black/60 italic">
+                                Sin responsable
+                              </span>
                             )}
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-sm">
                               {(() => {
                                 // Buscar cualquier tipo de sensor disponible
-                                const sensorTypes = ['temperatura', 'humedad', 'lluvia', 'radiacion_solar'];
-                                const availableSensor = sensorTypes.find(type => 
-                                  parcela.sensores?.[type]?.[0]?.value !== undefined
+                                const sensorTypes = [
+                                  "temperatura",
+                                  "humedad",
+                                  "lluvia",
+                                  "radiacion_solar",
+                                ];
+                                const availableSensor = sensorTypes.find(
+                                  (type) =>
+                                    parcela.sensores?.[type]?.[0]?.value !==
+                                    undefined
                                 );
-                                
-                                if (availableSensor && parcela.sensores[availableSensor]?.[0]) {
-                                  const sensor = parcela.sensores[availableSensor][0];
-                                  const value = sensor.value;
-                                  
-                                  // Colores según el tipo y valor
-                                  let colorClass = 'text-gray-600';
-                                  if (availableSensor === 'temperatura') {
-                                    colorClass = value > 30 ? 'text-red-600' : value > 25 ? 'text-orange-600' : 'text-green-600';
-                                  } else if (availableSensor === 'humedad') {
-                                    colorClass = value > 70 ? 'text-blue-600' : value > 50 ? 'text-blue-500' : 'text-blue-400';
-                                  } else if (availableSensor === 'lluvia') {
-                                    colorClass = value > 50 ? 'text-indigo-600' : value > 20 ? 'text-indigo-500' : 'text-indigo-400';
-                                  } else if (availableSensor === 'radiacion_solar') {
-                                    colorClass = value > 800 ? 'text-yellow-600' : value > 400 ? 'text-yellow-500' : 'text-yellow-400';
-                                  }
-                                  
+
+                                if (
+                                  availableSensor &&
+                                  parcela.sensores[availableSensor]?.[0]
+                                ) {
+                                  const sensorTypeNames: Record<
+                                    string,
+                                    string
+                                  > = {
+                                    temperatura: "Temperatura",
+                                    humedad: "Humedad",
+                                    lluvia: "Lluvia",
+                                    radiacion_solar: "Radiación Solar",
+                                  };
+
                                   return (
-                                    <div>
-                                      <span className={`font-medium ${colorClass}`}>
-                                        {value}
-                                        <span className="text-black/70 ml-1">
-                                          {sensor.unit || ''}
-                                        </span>
-                                      </span>
-                                      <div className="text-xs text-black/60 mt-0.5 capitalize">
-                                        {sensor.type?.replace('_', ' ') || availableSensor.replace('_', ' ')}
-                                      </div>
+                                    <div className="text-xs text-black/70 capitalize font-medium">
+                                      {sensorTypeNames[availableSensor] ||
+                                        availableSensor.replace("_", " ")}
                                     </div>
                                   );
                                 }
-                                
-                                return <span className="text-black/60">N/A</span>;
+
+                                return (
+                                  <span className="text-black/60 text-xs">
+                                    Sin sensores
+                                  </span>
+                                );
                               })()}
                             </div>
                           </td>
@@ -492,14 +666,64 @@ function Parcelas() {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex space-x-2">
+                            <div className="flex space-x-2 items-center">
+                              {parcela.coords && (
+                                <button
+                                  onClick={() => {
+                                    // Primero centrar el mapa en las coordenadas
+                                    window.dispatchEvent(
+                                      new CustomEvent("centerMap", {
+                                        detail: {
+                                          lat: parcela.coords.lat,
+                                          lon: parcela.coords.lon,
+                                          zoom: 16,
+                                        },
+                                      })
+                                    );
+
+                                    // Luego hacer scroll suave hacia el mapa
+                                    setTimeout(() => {
+                                      const mapaElement =
+                                        document.querySelector(
+                                          ".leaflet-container"
+                                        );
+                                      if (mapaElement) {
+                                        mapaElement.scrollIntoView({
+                                          behavior: "smooth",
+                                          block: "center",
+                                        });
+                                      }
+                                    }, 200);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-900 text-base font-medium transition-all duration-200 hover:scale-110 transform hover:bg-blue-50 rounded px-1 py-0.5"
+                                  title={`Ver parcela en el mapa (${parcela.coords.lat.toFixed(
+                                    4
+                                  )}, ${parcela.coords.lon.toFixed(4)})`}
+                                  disabled={loading || operationLoading}
+                                >
+                                  �️
+                                </button>
+                              )}
                               <button
                                 onClick={() => {
                                   // Convertir el formato para que funcione con el modal existente
                                   const parcelaForModal = {
                                     _id: parcela.parcelaMg_Id,
-                                    coords: parcela.coords || { lat: 0, lon: 0 },
-                                    sensores: parcela.sensores || { temperatura: [{ value: 0, unit: "°C", timestamp: "", coords: { lat: 0, lon: 0 }, type: "temperatura" }] },
+                                    coords: parcela.coords || {
+                                      lat: 0,
+                                      lon: 0,
+                                    },
+                                    sensores: parcela.sensores || {
+                                      temperatura: [
+                                        {
+                                          value: 0,
+                                          unit: "°C",
+                                          timestamp: "",
+                                          coords: { lat: 0, lon: 0 },
+                                          type: "temperatura",
+                                        },
+                                      ],
+                                    },
                                     timestamp: parcela.timestamp || "",
                                     isDeleted: parcela.isDeleted || false,
                                     sqlData: {
@@ -507,11 +731,11 @@ function Parcelas() {
                                       nombre: parcela.nombre,
                                       parcelaMg_Id: parcela.parcelaMg_Id,
                                       fecha_creacion: parcela.fecha_creacion,
-                                      borrado: false
+                                      borrado: false,
                                     },
                                     hasResponsable: true,
                                     responsable: parcela.responsable,
-                                    nombre: parcela.nombre
+                                    nombre: parcela.nombre,
                                   };
                                   openModal("edit", parcelaForModal);
                                 }}
@@ -525,8 +749,21 @@ function Parcelas() {
                                   // Convertir el formato para que funcione con el modal existente
                                   const parcelaForModal = {
                                     _id: parcela.parcelaMg_Id,
-                                    coords: parcela.coords || { lat: 0, lon: 0 },
-                                    sensores: parcela.sensores || { temperatura: [{ value: 0, unit: "°C", timestamp: "", coords: { lat: 0, lon: 0 }, type: "temperatura" }] },
+                                    coords: parcela.coords || {
+                                      lat: 0,
+                                      lon: 0,
+                                    },
+                                    sensores: parcela.sensores || {
+                                      temperatura: [
+                                        {
+                                          value: 0,
+                                          unit: "°C",
+                                          timestamp: "",
+                                          coords: { lat: 0, lon: 0 },
+                                          type: "temperatura",
+                                        },
+                                      ],
+                                    },
                                     timestamp: parcela.timestamp || "",
                                     isDeleted: parcela.isDeleted || false,
                                     sqlData: {
@@ -534,11 +771,11 @@ function Parcelas() {
                                       nombre: parcela.nombre,
                                       parcelaMg_Id: parcela.parcelaMg_Id,
                                       fecha_creacion: parcela.fecha_creacion,
-                                      borrado: false
+                                      borrado: false,
                                     },
                                     hasResponsable: true,
                                     responsable: parcela.responsable,
-                                    nombre: parcela.nombre
+                                    nombre: parcela.nombre,
                                   };
                                   handleDeleteResponsable(parcelaForModal);
                                 }}
@@ -562,9 +799,7 @@ function Parcelas() {
       <Modal
         type={modalType}
         title={
-          modalType === "add"
-            ? "Asignar Responsable"
-            : "Editar Responsable"
+          modalType === "add" ? "Asignar Responsable" : "Editar Responsable"
         }
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -590,21 +825,75 @@ function Parcelas() {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                Coordenadas (Solo lectura)
+                ID de la Parcela
+              </label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs bg-gray-50 font-mono"
+                placeholder="ID de MongoDB"
+                value={selectedParcela ? selectedParcela._id : ""}
+                readOnly
+              />
+              {selectedParcela &&
+                selectedParcela._id &&
+                selectedParcela._id.includes("_") && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Las coordenadas se extraen automáticamente del ID
+                    (formato: lat_lon)
+                  </p>
+                )}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Coordenadas (Extraídas del ID)
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   className="border border-gray-300 rounded px-2 py-1.5 text-sm bg-gray-50"
                   placeholder="Latitud"
-                  value={selectedParcela ? selectedParcela.coords.lat : ""}
+                  value={
+                    selectedParcela
+                      ? (() => {
+                          // Si las coordenadas son 0,0 intentar extraer del ID
+                          if (
+                            selectedParcela.coords.lat === 0 &&
+                            selectedParcela.coords.lon === 0 &&
+                            selectedParcela._id
+                          ) {
+                            const coords = parseCoordinatesFromId(
+                              selectedParcela._id
+                            );
+                            return coords.lat;
+                          }
+                          return selectedParcela.coords.lat;
+                        })()
+                      : ""
+                  }
                   readOnly
                 />
                 <input
                   type="text"
                   className="border border-gray-300 rounded px-2 py-1.5 text-sm bg-gray-50"
                   placeholder="Longitud"
-                  value={selectedParcela ? selectedParcela.coords.lon : ""}
+                  value={
+                    selectedParcela
+                      ? (() => {
+                          // Si las coordenadas son 0,0 intentar extraer del ID
+                          if (
+                            selectedParcela.coords.lat === 0 &&
+                            selectedParcela.coords.lon === 0 &&
+                            selectedParcela._id
+                          ) {
+                            const coords = parseCoordinatesFromId(
+                              selectedParcela._id
+                            );
+                            return coords.lon;
+                          }
+                          return selectedParcela.coords.lon;
+                        })()
+                      : ""
+                  }
                   readOnly
                 />
               </div>
@@ -615,29 +904,37 @@ function Parcelas() {
               </label>
               <select
                 ref={usuarioRef}
-                key={`usuario-${selectedParcela?._id || 'new'}-${selectedParcela?.responsable?.id || 'none'}`}
+                key={`usuario-${selectedParcela?._id || "new"}-${
+                  selectedParcela?.responsable?.id || "none"
+                }`}
                 title="Usuario responsable"
                 className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
                 defaultValue={
-                  modalType === "edit" && selectedParcela && selectedParcela.responsable
+                  modalType === "edit" &&
+                  selectedParcela &&
+                  selectedParcela.responsable
                     ? selectedParcela.responsable.id.toString()
                     : ""
                 }
               >
                 <option value="">Selecciona un usuario</option>
                 {usuarios.length === 0 ? (
-                  <option value="" disabled>Cargando usuarios...</option>
+                  <option value="" disabled>
+                    Cargando usuarios...
+                  </option>
                 ) : (
                   usuarios.map((usuario) => (
                     <option key={usuario.id} value={usuario.id}>
-                      {usuario.username} - {usuario.Tbl_Persona?.nombre} {usuario.Tbl_Persona?.apellido_paterno}
+                      {usuario.username} - {usuario.Tbl_Persona?.nombre}{" "}
+                      {usuario.Tbl_Persona?.apellido_paterno}
                     </option>
                   ))
                 )}
               </select>
               {usuarios.length === 0 && (
                 <p className="text-xs text-red-500 mt-1">
-                  No hay usuarios disponibles. Verifica la conexión con el servidor.
+                  No hay usuarios disponibles. Verifica la conexión con el
+                  servidor.
                 </p>
               )}
             </div>
@@ -655,20 +952,19 @@ function Parcelas() {
                 <div className="absolute inset-0 border-4 border-emerald-600 rounded-full border-r-transparent animate-spin"></div>
                 <div className="absolute inset-2 border-2 border-emerald-400 rounded-full border-l-transparent animate-spin animation-delay-150"></div>
               </div>
-              
+
               <h3 className="text-xl font-semibold text-gray-800 mb-2">
                 Procesando...
               </h3>
-              
+
               <p className="text-gray-600 text-sm mb-4">
-                {modalType === "add" 
+                {modalType === "add"
                   ? "Asignando responsable a la parcela"
                   : modalType === "edit"
                   ? "Actualizando información de la parcela"
-                  : "Eliminando responsable de la parcela"
-                }
+                  : "Eliminando responsable de la parcela"}
               </p>
-              
+
               <div className="flex items-center justify-center space-x-1">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce animation-delay-75"></div>
